@@ -12,8 +12,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-readonly LOCAL_SDK_DIR="../zrt-python-sdk"
-
 if [ -t 1 ]; then
   C_INFO=$'\033[0;36m'; C_WARN=$'\033[0;33m'; C_ERR=$'\033[0;31m'; C_OFF=$'\033[0m'
 else
@@ -28,7 +26,7 @@ die()  { printf '%s[setup] error:%s %s\n' "$C_ERR" "$C_OFF" "$*" >&2; exit 1; }
 if command -v uv >/dev/null 2>&1; then
   log "uv detected → uv sync"
   uv sync
-  run_hint="uv run features/01_basic_cascade.py"
+  run_hint="uv run features/basic_cascade.py"
 else
   warn "uv not found — falling back to venv + pip (install uv for faster setup: https://docs.astral.sh/uv/)."
   command -v python3 >/dev/null 2>&1 || die "python3 not found. Install Python 3.11+ and re-run."
@@ -37,23 +35,20 @@ else
     log "creating virtualenv at .venv"
     python3 -m venv .venv
   fi
+
   # shellcheck disable=SC1091
   source .venv/bin/activate
 
   log "upgrading pip"
   python -m pip install --quiet --upgrade pip
 
-  if [ -d "$LOCAL_SDK_DIR" ]; then
-    log "installing local SDK (editable) from $LOCAL_SDK_DIR"
-    pip install --quiet -e "$LOCAL_SDK_DIR"
-  else
-    log "local SDK not found → installing published beta (pip install --pre zrt)"
-    pip install --quiet --pre zrt
-  fi
+  log "installing zrt==0.1.0"
+  pip install --quiet "zrt==0.1.0"
 
   log "installing example dependencies"
   pip install --quiet "python-dotenv>=1.0"
-  run_hint="source .venv/bin/activate && python features/01_basic_cascade.py"
+
+  run_hint="source .venv/bin/activate && python features/basic_cascade.py"
 fi
 
 # Seed .env from the template without clobbering an existing one.
