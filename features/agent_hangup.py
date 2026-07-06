@@ -50,6 +50,8 @@ class Receptionist(Agent):
             reason: Why the call is ending (e.g. "caller said goodbye").
         """
         # hang up the live session.
+        handle = await self.session.say("Thanks for calling. Goodbye!")
+        await handle
         await self.session.hangup(reason=reason)
         return {"ended": True, "reason": reason}
 
