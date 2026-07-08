@@ -1,8 +1,8 @@
 """
 18 · Inference Gateway turn detection — run turn-taking on Zero Runtime's gateway.
 
-Feature:  Instead of a locally-configured detector, Turn.namo(...) from zrt.agents.inference
-          builds a Namo turn detector that runs on the  Zero Runtime Inference
+Feature:  Instead of a locally-configured detector, TurnDetector(model="echo-large")
+          from zrt.inference runs turn detection on the Zero Runtime Inference
           Gateway. Drop it into the pipeline's turn_detector slot exactly like a plugin
           detector — the gateway handles end-of-utterance classification.
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Inference-Gateway turn detector
@@ -11,7 +11,7 @@ Run:      uv run features/inference_gateway.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
-from zrt.inference import DeepgramSTT, CartesiaTTS, GoogleLLM, TurnV2, SarvamAISTT
+from zrt.inference import DeepgramSTT, CartesiaTTS, GoogleLLM, TurnDetector, SarvamAISTT
 from zrt.plugins import SileroVAD
 
 from dotenv import load_dotenv
@@ -54,8 +54,8 @@ pipeline = Pipeline(
     llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
     tts=CartesiaTTS(),
     vad=SileroVAD(),
-    # Gateway-hosted turn detection instead of a local NamoTurnDetectorV1.
-    turn_detector=TurnV2.echo_large(),
+    # echo-large runs on the inference gateway (gRPC), unlike the local model="namo".
+    turn_detector=TurnDetector(model="echo-large"),
 )
 
 

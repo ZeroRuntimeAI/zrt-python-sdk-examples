@@ -64,7 +64,7 @@ pipeline = Pipeline(
     llm=GoogleLLM(model="gemini-2.5-flash"),
     tts=CartesiaTTS(model="sonic-3.5"),
     vad=SileroVAD(threshold=0.4),
-    turn_detector=TurnDetector(language="en", threshold=0.8),
+    turn_detector=TurnDetector(model="echo-large"),
 )
 
 

@@ -50,7 +50,7 @@ pipeline = Pipeline(
     llm=GroqLLM(model="llama-3.3-70b-versatile"),
     tts=CartesiaTTS(model="sonic-3.5"),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    turn_detector=TurnDetector(model="echo-large"),
 )
 
 

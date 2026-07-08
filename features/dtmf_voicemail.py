@@ -1,6 +1,6 @@
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, DTMFHandler, VoiceMailDetector
-from zrt.plugins import DeepgramTTS, GoogleLLM, NamoTurnDetectorV1, SarvamAISTT, SileroVAD
+from zrt.plugins import DeepgramTTS, GoogleLLM, TurnDetector, SarvamAISTT, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -67,7 +67,7 @@ pipeline = Pipeline(
     llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
     tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
     vad=SileroVAD(),
-    turn_detector=NamoTurnDetectorV1(language="en", threshold=0.8),
+    turn_detector=TurnDetector(model="echo-large"),
     dtmf_handler=dtmf_handler,
     voice_mail_detector=voice_mail_detector,
 )

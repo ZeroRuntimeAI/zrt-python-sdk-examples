@@ -53,7 +53,7 @@ pipeline = Pipeline(
     llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
     tts=SarvamAITTS(),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    turn_detector=TurnDetector(model="echo-large"),
 )
 
 

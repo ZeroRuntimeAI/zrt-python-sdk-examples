@@ -32,7 +32,7 @@ pipeline = Pipeline(
     llm=GroqLLM(model="llama-3.3-70b-versatile"),
     tts=CartesiaTTS(model="sonic-3.5"),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    turn_detector=TurnDetector(model="echo-large"),
     eou_config=EOUConfig(
         mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
     interrupt_config=InterruptConfig(mode="HYBRID"),
