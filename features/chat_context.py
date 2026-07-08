@@ -12,7 +12,6 @@ Pipeline: Deepgram nova-2 (STT) · OpenAI gpt-5.4-nano (LLM) · Cartesia sonic-3
 Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, OPENAI_API_KEY, CARTESIA_API_KEY
 Run:      uv run features/chat_context.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, ContextWindow
 from zrt.plugins import CartesiaTTS, DeepgramSTT, OpenAILLM, SileroVAD, TurnDetector
@@ -22,17 +21,6 @@ load_dotenv(override=True)
 
 AGENT_ID = "chat-context-agent-py19"
 
-
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-    # Keep the prompt within a token budget; always retain the last few turns.
-    context_window=ContextWindow(max_tokens=800, keep_recent_turns=4),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -49,6 +37,9 @@ class Assistant(Agent):
     async def on_enter(self) -> None:
         await self.session.say("Hi! Chat with me, then ask me to recap our conversation anytime.")
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     @function_tool
     async def recap_conversation(self) -> dict:
         """Recap what the user and assistant have discussed so far.
@@ -62,6 +53,19 @@ class Assistant(Agent):
         turns = [{"role": m.get("role"), "content": m.get("content")}
                  for m in history]
         return {"turn_count": len(turns), "recent_turns": turns}
+
+
+pipeline = Pipeline(
+    stt=DeepgramSTT(model="nova-2"),
+    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                  reasoning_effort="none", verbosity="low"),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    # Keep the prompt within a token budget; always retain the last few turns.
+    context_window=ContextWindow(max_tokens=800, keep_recent_turns=4),
+)
+
 
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""

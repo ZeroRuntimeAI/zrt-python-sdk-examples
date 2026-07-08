@@ -8,7 +8,6 @@ Pipeline: Cartesia (STT) · OpenAI (LLM) · SarvamAI (TTS) · Silero VAD · Namo
 Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, SARVAM_API_KEY
 Run:      uv run features/wakeup_call.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import CartesiaSTT, OpenAILLM, SarvamAITTS, SileroVAD, TurnDetector
@@ -18,15 +17,7 @@ load_dotenv(override=True)
 
 AGENT_ID = "wakeup-agent-py17"
 
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=SarvamAITTS(streaming=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-    wake_up=10,              # nudge after 10s of caller silence
-)
+
 class PatientAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -42,6 +33,9 @@ class PatientAgent(Agent):
 
     async def on_enter(self) -> None:
         await self.session.say("Hi! Take your time — I'm here whenever you're ready.")
+
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
 
     async def on_wake_up(self) -> None:
         # Called by the runtime when the caller has been silent for `wake_up` seconds.
@@ -59,7 +53,15 @@ class PatientAgent(Agent):
         return {"topics": ["account", "billing", "technical support"]}
 
 
-
+pipeline = Pipeline(
+    stt=CartesiaSTT(model="ink-2"),
+    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                  reasoning_effort="none", verbosity="low"),
+    tts=SarvamAITTS(streaming=True),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    wake_up=10,              # nudge after 10s of caller silence
+)
 
 
 def invoke_agent() -> None:

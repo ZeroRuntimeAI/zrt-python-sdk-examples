@@ -8,7 +8,6 @@ Pipeline: Gemini Realtime (speech-to-speech)
 Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
 Run:      uv run features/realtime.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import GeminiLiveConfig, GeminiRealtime
@@ -18,9 +17,6 @@ load_dotenv(override=True)
 
 AGENT_ID = "realtime-agent-py07"
 
-pipeline = Pipeline(
-    llm=GeminiRealtime(config=GeminiLiveConfig()),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -52,7 +48,9 @@ class Assistant(Agent):
         return {"topic": topic, "fact": f"Here's something surprising about {topic}: it's more fascinating than most people realize!"}
 
 
-
+pipeline = Pipeline(
+    llm=GeminiRealtime(config=GeminiLiveConfig()),
+)
 
 
 def invoke_agent() -> None:

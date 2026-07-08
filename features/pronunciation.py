@@ -11,7 +11,6 @@ Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD 
 Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
 Run:      uv run features/pronunciation.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
@@ -20,29 +19,6 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 AGENT_ID = "pronunciation-agent-py15"
-
-# Map common mishears to the correct token. Keys are matched case-insensitively against
-# the STT transcript; values are what the LLM actually receives.
-WORD_SUBSTITUTIONS = {
-    "ZRT": "ZeroRuntime",
-    "open a i": "OpenAI",
-    "zero runtime": "ZeroRuntime",
-    "char actor": "character",
-    "hello": "bye",
-    "you": "I"
-}
-
-# Regex patterns whose matches are removed from the transcript (filler words here).
-FILTER_PATTERNS = [r"\b(uh+|um+|erm+|hmm+)\b"]
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-    stt_word_substitutions=WORD_SUBSTITUTIONS,
-    stt_filter_patterns=FILTER_PATTERNS,
-)
 
 
 class SupportAgent(Agent):
@@ -60,6 +36,9 @@ class SupportAgent(Agent):
     async def on_enter(self) -> None:
         await self.session.say("Hi! Ask me anything about ZeroRuntime.")
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     @function_tool
     async def get_doc_link(self, topic: str) -> dict:
         """Return a documentation link for a topic.
@@ -69,6 +48,31 @@ class SupportAgent(Agent):
         """
         # Replace with a real docs lookup in production.
         return {"topic": topic, "url": f"https://docs.zeroruntime.ai/{topic.replace(' ', '-')}"}
+
+
+# Map common mishears to the correct token. Keys are matched case-insensitively against
+# the STT transcript; values are what the LLM actually receives.
+WORD_SUBSTITUTIONS = {
+    "ZRT": "ZeroRuntime",
+    "open a i": "OpenAI",
+    "zero runtime": "ZeroRuntime",
+    "char actor": "character",
+    "hello": "bye",
+    "you": "I"
+}
+
+# Regex patterns whose matches are removed from the transcript (filler words here).
+FILTER_PATTERNS = [r"\b(uh+|um+|erm+|hmm+)\b"]
+
+pipeline = Pipeline(
+    stt=DeepgramSTT(model="nova-2"),
+    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+    stt_word_substitutions=WORD_SUBSTITUTIONS,
+    stt_filter_patterns=FILTER_PATTERNS,
+)
 
 
 def invoke_agent() -> None:

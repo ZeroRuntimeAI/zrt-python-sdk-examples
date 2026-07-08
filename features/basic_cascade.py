@@ -15,13 +15,6 @@ load_dotenv(override=True)
 
 AGENT_ID = "basic-cascade-agent-py01"
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2-conversationalai"),
-    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -52,6 +45,13 @@ class Assistant(Agent):
         return {"city": city, "temperature_c": 28, "condition": "Sunny", "humidity": 55}
 
 
+pipeline = Pipeline(
+    stt=DeepgramSTT(model="nova-2-conversationalai"),
+    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+)
 
 
 def invoke_agent() -> None:
