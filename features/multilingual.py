@@ -7,7 +7,6 @@ Pipeline: SarvamAI (STT) · Google Gemini (LLM) · SarvamAI (TTS) · Silero VAD 
 Env:      ZRT_AUTH_TOKEN, SARVAM_API_KEY, GOOGLE_API_KEY
 Run:      uv run features/multilingual.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import GoogleLLM, SarvamAISTT, SarvamAITTS, SileroVAD, TurnDetector
@@ -17,14 +16,6 @@ load_dotenv(override=True)
 
 AGENT_ID = "multilingual-agent-py13"
 
-
-pipeline = Pipeline(
-    stt=SarvamAISTT(model="saaras:v3", language="unknown"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=SarvamAITTS(),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -56,6 +47,14 @@ class Assistant(Agent):
         # Replace with a real translation API call in production.
         return {"source_text": text, "target_language": target_language, "translation": text}
 
+
+pipeline = Pipeline(
+    stt=SarvamAISTT(model="saaras:v3", language="unknown"),
+    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+    tts=SarvamAITTS(),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
+)
 
 
 @pipeline.on("user_turn_start")
