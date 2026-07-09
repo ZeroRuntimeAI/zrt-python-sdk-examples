@@ -35,7 +35,7 @@ pipeline = Pipeline(
                   reasoning_effort="none", verbosity="low"),
     tts=SarvamAITTS(streaming=True),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo-large"),
+    turn_detector=TurnDetector(model="echo_large"),
 )
 
 class OutreachAgent(Agent):

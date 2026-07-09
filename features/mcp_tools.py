@@ -40,7 +40,7 @@ pipeline = Pipeline(
                   reasoning_effort="none", verbosity="low"),
     tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo-large"),
+    turn_detector=TurnDetector(model="echo_large"),
 )
 
 

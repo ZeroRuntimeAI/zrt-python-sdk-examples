@@ -40,7 +40,7 @@ pipeline = Pipeline(
     llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
     tts=CartesiaTTS(model="sonic-3.5"),
     vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo-large"),
+    turn_detector=TurnDetector(model="echo_large"),
     interrupt_config=InterruptConfig(
         mode="HYBRID",
         interrupt_min_duration=0.5,

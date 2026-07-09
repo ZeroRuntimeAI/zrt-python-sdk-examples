@@ -55,7 +55,7 @@ pipeline = Pipeline(
     tts=CartesiaTTS(),
     vad=SileroVAD(),
     # echo-large runs on the inference gateway (gRPC), unlike the local model="namo".
-    turn_detector=TurnDetector(model="echo-large"),
+    turn_detector=TurnDetector(model="echo_large"),
 )
 
 
