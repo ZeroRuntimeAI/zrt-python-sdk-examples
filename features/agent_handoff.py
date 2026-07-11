@@ -7,7 +7,6 @@ Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TT
 Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
 Run:      uv run features/agent_handoff.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, agent_switch
 from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
@@ -33,6 +32,9 @@ class BillingAgent(Agent):
     async def on_enter(self) -> None:
         await self.session.say("You're now with billing. What invoice can I help with?")
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     @function_tool
     async def get_invoice(self, invoice_id: str) -> dict:
         """Look up an invoice by its ID.
@@ -57,6 +59,9 @@ class SupportAgent(Agent):
     async def on_enter(self) -> None:
         await self.session.say("You're now with support. What issue are you facing?")
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     @function_tool
     async def create_ticket(self, issue: str) -> dict:
         """Create a support ticket for the user's issue.
@@ -66,15 +71,6 @@ class SupportAgent(Agent):
         """
         # Replace with a real ticketing API call in production.
         return {"ticket_id": "TCK-1042", "issue": issue, "status": "open"}
-
-
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 
 
 class TriageAgent(Agent):
@@ -94,6 +90,9 @@ class TriageAgent(Agent):
     async def on_enter(self) -> None:
         await self.session.say("Hi! Are you calling about billing or technical support?")
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     @function_tool
     async def route_to_billing(self) -> dict:
         """Hand the caller off to the billing specialist.
@@ -111,6 +110,15 @@ class TriageAgent(Agent):
             None.
         """
         return agent_switch(to=SUPPORT_AGENT_ID, reason="support question", inherit_context=True)
+
+
+pipeline = Pipeline(
+    stt=DeepgramSTT(model="nova-2"),
+    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="echo_large"),
+)
 
 
 def invoke_agent() -> None:

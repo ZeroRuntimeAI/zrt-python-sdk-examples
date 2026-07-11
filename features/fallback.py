@@ -13,35 +13,15 @@ Env:      ZRT_AUTH_TOKEN,
           CARTESIA_API_KEY (TTS primary)
 Run:      uv run features/fallback.py
 """
-
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, FallbackSTT, FallbackLLM, FallbackTTS
-from zrt.plugins import (
-    CartesiaTTS,
-    DeepgramSTT,
-    DeepgramTTS,
-    GoogleLLM,
-    OpenAILLM,
-    SarvamAISTT,
-    SileroVAD,
-    TurnDetector,
-)
+from zrt.plugins import CartesiaTTS, DeepgramSTT, DeepgramTTS, GoogleLLM, OpenAILLM, SarvamAISTT, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 AGENT_ID = "fallback-agent-py05"
 
-pipeline = Pipeline(
-    stt=FallbackSTT([SarvamAISTT(model="123"), DeepgramSTT(model="nova-2")]),
-    llm=FallbackLLM([OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True, reasoning_effort="none",
-                    verbosity="low"), GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)]),
-    tts=FallbackTTS([CartesiaTTS(model="sonic-3.5"),
-                    DeepgramTTS(model="aura-2-thalia-en", stream=True)]),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -72,6 +52,16 @@ class Assistant(Agent):
         # replace with real API in production
         return {"service": service, "status": "operational", "latency_ms": 42, "uptime": "99.99%"}
 
+
+pipeline = Pipeline(
+    stt=FallbackSTT([SarvamAISTT(model="123"), DeepgramSTT(model="nova-2")]),
+    llm=FallbackLLM([OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True, reasoning_effort="none",
+                    verbosity="low"), GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)]),
+    tts=FallbackTTS([CartesiaTTS(model="sonic-3.5"),
+                    DeepgramTTS(model="aura-2-thalia-en", stream=True)]),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="echo_large"),
+)
 
 
 def invoke_agent() -> None:

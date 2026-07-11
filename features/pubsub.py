@@ -15,7 +15,6 @@ Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TT
 Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
 Run:      uv run features/pubsub.py
 """
-
 import asyncio
 
 import zrt
@@ -29,9 +28,6 @@ AGENT_ID = "pubsub-chat-agent-py16"
 AGENT_NAME = "ChatAgent"
 CHAT_TOPIC = "CHAT"   # the room pub/sub topic this agent publishes + subscribes on
 
-pipeline = Pipeline(
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
-)
 
 class ChatAgent(Agent):
     def __init__(self) -> None:
@@ -102,6 +98,9 @@ class ChatAgent(Agent):
         return {"published": True, "topic": CHAT_TOPIC, "message": message}
 
 
+pipeline = Pipeline(
+    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
+)
 
 
 def invoke_agent() -> None:

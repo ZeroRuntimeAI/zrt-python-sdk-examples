@@ -31,14 +31,6 @@ AGENT_ID = "vision-agent-py08"
 CHAT_TOPIC = "CHAT"
 CAPTURE_MESSAGE = "capture_frames"
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
-
 
 class VisionAgent(Agent):
     def __init__(self) -> None:
@@ -59,6 +51,9 @@ class VisionAgent(Agent):
         # A UI publishes {"message": "capture_frames"} on CHAT (e.g. a capture button).
         await self.session.subscribe_pubsub(CHAT_TOPIC, self._on_chat)
 
+    async def on_exit(self) -> None:
+        await self.session.say("Goodbye!")
+
     def _on_chat(self, msg: dict) -> None:
         # subscribe_pubsub delivers a dict: {topic, message, sender_id, sender_name, ...}.
         if msg.get("message") == CAPTURE_MESSAGE:
@@ -78,9 +73,14 @@ class VisionAgent(Agent):
             latest_frames=2,
         )
 
-    async def on_exit(self) -> None:
-        await self.session.say("Goodbye!")
 
+pipeline = Pipeline(
+    stt=DeepgramSTT(model="nova-2"),
+    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="echo_large"),
+)
 
 
 def invoke_agent() -> None:

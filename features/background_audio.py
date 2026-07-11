@@ -9,11 +9,9 @@ Env:      ZRT_AUTH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_API_KEY, CARTES
           that shares the host filesystem; use an http(s) URL for a hosted runtime.
 Run:      uv run features/background_audio.py
 """
-import os
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, BackgroundAudioHandlerConfig
-from zrt.plugins import CartesiaTTS, GoogleLLM, SarvamAISTT, SileroVAD, TurnDetector
+from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -22,13 +20,7 @@ AGENT_ID = "background-audio-agent-py06"
 
 AUDIO_FILE = "http://cdn.zeroruntime.ai/zrt/bg-audio/bg-noise-1.wav"
 
-pipeline = Pipeline(
-    stt=SarvamAISTT(),
-    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
+
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -79,11 +71,19 @@ class Assistant(Agent):
         return "Background music stopped."
 
 
+pipeline = Pipeline(
+    stt=DeepgramSTT(),
+    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
+    tts=CartesiaTTS(model="sonic-3.5"),
+    vad=SileroVAD(),
+    turn_detector=TurnDetector(model="echo_large"),
+)
+
+
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""
     zrt.invoke(AGENT_ID, room=Room(playground=True))
 
 
 if __name__ == "__main__":
-    # background_audio=True enables the worker session's mixer (same worker-session lever as vision).
     zrt.serve(Assistant, on_ready=invoke_agent, background_audio=True)

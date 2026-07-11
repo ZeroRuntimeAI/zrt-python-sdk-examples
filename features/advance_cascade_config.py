@@ -1,20 +1,11 @@
-"""
-01 · Basic cascade — the smallest complete voice agent.
-
-Feature:  STT -> LLM -> TTS cascade with VAD + turn detection, one function tool.
-Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
-Run:      uv run features/basic_cascade.py
-"""
 import zrt
-from zrt import Agent, Pipeline, Room, function_tool
+from zrt import Agent, InterruptConfig, Pipeline, Room, function_tool
 from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "basic-cascade-agent-py01"
-
+AGENT_ID = "advance-cascade-config"
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -41,7 +32,6 @@ class Assistant(Agent):
         Args:
             city: Name of the city to look up.
         """
-        # Replace with a real weather API call in production.
         return {"city": city, "temperature_c": 28, "condition": "Sunny", "humidity": 55}
 
 
@@ -51,6 +41,17 @@ pipeline = Pipeline(
     tts=CartesiaTTS(model="sonic-3.5"),
     vad=SileroVAD(),
     turn_detector=TurnDetector(model="echo_large"),
+    interrupt_config=InterruptConfig(
+        mode="HYBRID",
+        interrupt_min_duration=0.5,
+        interrupt_min_words=2,
+        interrupt_min_confidence=0.0,
+        false_interrupt_pause_duration=2.0,
+        resume_on_false_interrupt=True,
+        false_interrupt_pause_duration_ms=2000,
+        interrupt_fade_duration=0.0,
+        interrupt_fade_duration_ms=400,
+    ),
 )
 
 
