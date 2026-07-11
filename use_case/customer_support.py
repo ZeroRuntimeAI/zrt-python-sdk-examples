@@ -1,5 +1,5 @@
 """
-Customer support — e-commerce order support voice agent.
+Customer support: e-commerce order support voice agent.
 
 Feature:  STT -> LLM -> TTS cascade; resolve FAQs, look up orders, file tickets, offer callback.
 Pipeline: Cartesia (STT) · Google Gemini (LLM) · SarvamAI (TTS) · Silero VAD · Namo turn detector
@@ -25,17 +25,18 @@ def _ist_now() -> str:
 AGENT_ID = "support-agent-py"
 
 
-
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=SarvamAITTS(streaming=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    eou_config=EOUConfig(
-        mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
-    interrupt_config=InterruptConfig(mode="HYBRID"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=SarvamAITTS(streaming=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+        eou_config=EOUConfig(
+            mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
+        interrupt_config=InterruptConfig(mode="HYBRID"),
+    )
 
 
 class SupportAgent(Agent):
@@ -53,10 +54,10 @@ class SupportAgent(Agent):
                 "If the customer has a problem you cannot resolve, call create_ticket with a clear "
                 "summary and an appropriate priority (low, medium, or high). If they are still stuck or "
                 "prefer a person, offer a callback and call request_human_callback with their phone "
-                "number. Always confirm details back to the customer. Never invent order or ticket data — "
+                "number. Always confirm details back to the customer. Never invent order or ticket data; "
                 "use the tools."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -101,7 +102,7 @@ class SupportAgent(Agent):
             "warranty": "Electronics carry a 1 Year limited manufacturer warranty.",
         }
         answer = faqs.get(
-            topic.lower(), "I don't have that one on file — let me create a ticket for you.")
+            topic.lower(), "I don't have that one on file; let me create a ticket for you.")
         return {"topic": topic, "answer": answer}
 
     @function_tool
@@ -110,7 +111,7 @@ class SupportAgent(Agent):
 
         Args:
             issue: A short description of the customer's problem.
-            priority: Ticket priority — one of "low", "medium", or "high".
+            priority: Ticket priority; one of "low", "medium", or "high".
         """
         # Replace with a real ticketing system (Zendesk/Jira) write in production.
         return {

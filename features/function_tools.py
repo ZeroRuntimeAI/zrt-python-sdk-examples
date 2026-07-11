@@ -1,5 +1,5 @@
 """
-02 · Function tools — chaining multiple tools in one turn.
+02 · Function tools: chaining multiple tools in one turn.
 
 Feature:  Three tools the LLM can call and chain (forecast -> clothing) in a single reply.
 Pipeline: Google (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
@@ -27,7 +27,7 @@ class Assistant(Agent):
                 "then pass the resulting condition and temperature into recommend_clothing, "
                 "and summarize the advice. Use get_weather for simple current conditions."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -77,14 +77,16 @@ class Assistant(Agent):
         return {"condition": condition, "temp_c": temp_c, "wear": layers, "bring": extras}
 
 
-pipeline = Pipeline(
-    stt=GoogleSTT(model="chirp_3", location="us", stream=True),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-thalia-en"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=GoogleSTT(model="chirp_3", location="us", stream=True),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-thalia-en"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
 
 def invoke_agent() -> None:

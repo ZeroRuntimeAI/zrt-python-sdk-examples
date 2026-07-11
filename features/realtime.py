@@ -1,8 +1,8 @@
 """
-07 · Realtime — full speech-to-speech with a single realtime model.
+07 · Realtime: full speech-to-speech with a single realtime model.
 
 Feature:  Use a native realtime model in the LLM slot for low-latency, end-to-end
-          speech-to-speech. No separate STT/TTS/VAD/turn-detector — the model handles
+          speech-to-speech. No separate STT/TTS/VAD/turn-detector; the model handles
           audio in and audio out directly.
 Pipeline: Gemini Realtime (speech-to-speech)
 Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
@@ -27,7 +27,7 @@ class Assistant(Agent):
                 "You are a lively, low-latency voice assistant. Keep replies short and natural. "
                 "When asked for a fun fact, call the get_fun_fact tool and share it."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -48,9 +48,11 @@ class Assistant(Agent):
         return {"topic": topic, "fact": f"Here's something surprising about {topic}: it's more fascinating than most people realize!"}
 
 
-pipeline = Pipeline(
-    llm=GeminiRealtime(config=GeminiLiveConfig()),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=GeminiRealtime(config=GeminiLiveConfig()),
+    )
 
 
 def invoke_agent() -> None:

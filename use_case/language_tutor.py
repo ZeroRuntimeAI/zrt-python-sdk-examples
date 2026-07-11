@@ -1,5 +1,5 @@
 """
-Language tutor — realtime Spanish conversation tutor (full speech-to-speech).
+Language tutor: realtime Spanish conversation tutor (full speech-to-speech).
 
 Feature:  Single realtime model handles audio in/out directly (no STT/TTS/VAD/turn).
           Converses in simple Spanish, gently corrects mistakes, adapts to the learner.
@@ -26,12 +26,16 @@ def _ist_now() -> str:
 AGENT_ID = "language-tutor-agent-py"
 
 
-pipeline = Pipeline(
-    llm=OpenAIRealtime(
-        config=OpenAIRealtimeConfig(
-            model="gpt-realtime", voice="alloy", modalities=["text", "audio"]),
-    ),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=OpenAIRealtime(
+            config=OpenAIRealtimeConfig(
+                model="gpt-realtime", voice="alloy", modalities=["text", "audio"]),
+        ),
+    )
+
+
 class LanguageTutorAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -43,12 +47,12 @@ class LanguageTutorAgent(Agent):
                 "Spanish, slowing down and using easy vocabulary for beginners. "
                 "Gently correct the learner's mistakes: repeat what they said correctly, briefly "
                 "note the fix, then continue the conversation naturally. Be encouraging. "
-                "Gauge the learner's level from how they respond and adapt — simpler for beginners, "
+                "Gauge the learner's level from how they respond and adapt; simpler for beginners, "
                 "richer for advanced speakers. "
                 "If the learner asks about a grammar rule, call explain_grammar. If they want a "
                 "translation, call translate. Keep the conversation flowing and keep replies short."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -82,7 +86,6 @@ class LanguageTutorAgent(Agent):
             "to_language": to_language,
             "translation": f"[{to_language} translation of '{phrase}']",
         }
-
 
 
 def invoke_agent() -> None:

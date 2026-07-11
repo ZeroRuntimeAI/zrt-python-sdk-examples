@@ -1,11 +1,11 @@
 """
-15 · Pronunciation & transcript shaping — fix misheard terms and drop fillers.
+15 · Pronunciation & transcript shaping: fix misheard terms and drop fillers.
 
 Feature:  Two Pipeline knobs clean up the STT transcript before it reaches the LLM:
             - stt_word_substitutions: map what STT hears to the correct spelling/casing
               (brand names, jargon, homophones) so the LLM reads the right token.
             - stt_filter_patterns: regexes whose matches are stripped (e.g. filler words).
-          (For fully custom text-to-speech, register a @pipeline.on("tts") synthesis hook —
+          (For fully custom text-to-speech, register a @pipeline.on("tts") synthesis hook -
           in zrt that hook produces audio, so it's a bring-your-own-TTS path, not text fixup.)
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
 Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
@@ -30,7 +30,7 @@ class SupportAgent(Agent):
                 "You are a product support agent for ZeroRuntime. Answer questions "
                 "clearly and pronounce product names correctly."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -64,15 +64,18 @@ WORD_SUBSTITUTIONS = {
 # Regex patterns whose matches are removed from the transcript (filler words here).
 FILTER_PATTERNS = [r"\b(uh+|um+|erm+|hmm+)\b"]
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    stt_word_substitutions=WORD_SUBSTITUTIONS,
-    stt_filter_patterns=FILTER_PATTERNS,
-)
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(model="nova-2"),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+        stt_word_substitutions=WORD_SUBSTITUTIONS,
+        stt_filter_patterns=FILTER_PATTERNS,
+    )
 
 
 def invoke_agent() -> None:

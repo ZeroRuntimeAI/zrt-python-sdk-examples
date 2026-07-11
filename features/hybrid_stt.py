@@ -1,5 +1,5 @@
 import zrt
-from zrt import Agent, Pipeline, RealtimeConfig, Room, function_tool
+from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import DeepgramSTT, GeminiLiveConfig, GeminiRealtime, SileroVAD
 
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ class Assistant(Agent):
                 "You are a lively, low-latency voice assistant running on a hybrid pipeline. "
                 "Keep replies short and natural. When asked about the weather, call get_weather."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -38,12 +38,13 @@ class Assistant(Agent):
 
 # External ear + native voice: Deepgram transcribes the caller; the realtime model
 # answers in its own voice.
-pipeline = Pipeline(
-    llm=GeminiRealtime(config=GeminiLiveConfig()),
-    stt=DeepgramSTT(),
-    vad=SileroVAD(),
-    realtime_config=RealtimeConfig(mode="hybrid_stt"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=GeminiRealtime(config=GeminiLiveConfig()),
+        stt=DeepgramSTT(),
+        vad=SileroVAD(),
+    )
 
 
 def invoke_agent() -> None:

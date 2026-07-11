@@ -1,5 +1,5 @@
 """
-Appointment scheduling — clinic receptionist voice agent.
+Appointment scheduling: clinic receptionist voice agent.
 
 Feature:  STT -> LLM -> TTS cascade; full book/reschedule/cancel/remind lifecycle.
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
@@ -28,17 +28,20 @@ WORD_SUBSTITUTIONS = {
     "APT-10432": "A P T dash one zero four three two"
 }
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    eou_config=EOUConfig(
-        mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
-    interrupt_config=InterruptConfig(mode="HYBRID"),
-    stt_word_substitutions=WORD_SUBSTITUTIONS
-)
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(model="nova-2"),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+        eou_config=EOUConfig(
+            mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
+        interrupt_config=InterruptConfig(mode="HYBRID"),
+        stt_word_substitutions=WORD_SUBSTITUTIONS
+    )
 
 
 class AppointmentAgent(Agent):
@@ -57,10 +60,10 @@ class AppointmentAgent(Agent):
                 "To reschedule, ask for the existing appointment ID plus the new date and time (make sure it's in the future), then "
                 "call reschedule_appointment. To cancel, ask for the appointment ID and confirm before "
                 "calling cancel_appointment. If a caller wants a confirmation or reminder, call "
-                "send_reminder with the appointment ID. Never invent availability or IDs — always use "
+                "send_reminder with the appointment ID. Never invent availability or IDs; always use "
                 "the tools. If anything is unclear, ask a brief clarifying question."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -146,7 +149,6 @@ class AppointmentAgent(Agent):
             "appointment_id": appointment_id,
             "channel": "sms",
         }
-
 
 
 def invoke_agent() -> None:

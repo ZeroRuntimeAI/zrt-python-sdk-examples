@@ -1,5 +1,5 @@
 """
-01 · Basic cascade — the smallest complete voice agent.
+01 · Basic cascade: the smallest complete voice agent.
 
 Feature:  STT -> LLM -> TTS cascade with VAD + turn detection, one function tool.
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
@@ -25,7 +25,7 @@ class Assistant(Agent):
                 "You are a friendly voice assistant. Keep replies short and natural. "
                 "When asked about the weather, call the get_weather tool."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -45,13 +45,15 @@ class Assistant(Agent):
         return {"city": city, "temperature_c": 28, "condition": "Sunny", "humidity": 55}
 
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2-conversationalai"),
-    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(model="nova-2-conversationalai"),
+        llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
 
 def invoke_agent() -> None:

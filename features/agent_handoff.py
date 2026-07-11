@@ -1,5 +1,5 @@
 """
-10 · Agent handoff — triage agent that hands off to specialists.
+10 · Agent handoff: triage agent that hands off to specialists.
 
 Feature:  A triage agent routes the caller to a billing or support specialist via
           agent_switch(...). Each specialist is its own Agent with its own tools.
@@ -83,7 +83,7 @@ class TriageAgent(Agent):
                 "need billing or support. Call route_to_billing or route_to_support to "
                 "hand them off to the right specialist."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
             agents=[BillingAgent(), SupportAgent()],
         )
 
@@ -112,13 +112,15 @@ class TriageAgent(Agent):
         return agent_switch(to=SUPPORT_AGENT_ID, reason="support question", inherit_context=True)
 
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(model="nova-2"),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
 
 def invoke_agent() -> None:

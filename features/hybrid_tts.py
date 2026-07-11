@@ -1,5 +1,5 @@
 import zrt
-from zrt import Agent, Pipeline, RealtimeConfig, Room, function_tool
+from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import CartesiaTTS, GeminiLiveConfig, GeminiRealtime, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ class Assistant(Agent):
                 "You are a lively, low-latency voice assistant running on a hybrid pipeline. "
                 "Keep replies short and natural. When asked about the weather, call get_weather."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -39,13 +39,14 @@ class Assistant(Agent):
 
 # Native ear + external voice: the realtime model understands audio itself, but a
 # dedicated TTS speaks its text.
-pipeline = Pipeline(
-    llm=GeminiRealtime(config=GeminiLiveConfig()),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    realtime_config=RealtimeConfig(mode="hybrid_tts"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=GeminiRealtime(config=GeminiLiveConfig()),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
 
 def invoke_agent() -> None:

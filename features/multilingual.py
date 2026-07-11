@@ -1,5 +1,5 @@
 """
-13 · Multilingual — detect and reply in the user's language.
+13 · Multilingual: detect and reply in the user's language.
 
 Feature:  Deepgram multi-language STT + language-mirroring instructions. A
           user_turn_start hook logs each utterance.
@@ -27,7 +27,7 @@ class Assistant(Agent):
                 "speaks and ALWAYS reply in that same language. Use translate_phrase "
                 "when the user asks for a translation."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -48,18 +48,21 @@ class Assistant(Agent):
         return {"source_text": text, "target_language": target_language, "translation": text}
 
 
-pipeline = Pipeline(
-    stt=SarvamAISTT(model="saaras:v3", language="unknown"),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=SarvamAITTS(),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline (with its hooks); serve() builds a new agent + pipeline ."""
+    pipeline = Pipeline(
+        stt=SarvamAISTT(model="saaras:v3", language="unknown"),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=SarvamAITTS(),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
+    @pipeline.on("user_turn_start")
+    async def on_user_turn_start(transcript: str) -> None:
+        print(f"[multilingual] utterance: {transcript}")
 
-@pipeline.on("user_turn_start")
-async def on_user_turn_start(transcript: str) -> None:
-    print(f"[multilingual] utterance: {transcript}")
+    return pipeline
 
 
 def invoke_agent() -> None:

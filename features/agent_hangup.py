@@ -1,5 +1,5 @@
 """
-14 · Agent hangup — let the agent end the call itself.
+14 · Agent hangup: let the agent end the call itself.
 
 Feature:  A function tool calls session.hangup() so the agent can gracefully end the
           call once its job is done (e.g. after confirming an order or saying goodbye).
@@ -27,7 +27,7 @@ class Receptionist(Agent):
                 "there's anything else. When the caller says they're done (or says goodbye), "
                 "say a short farewell and call end_call to hang up. Do not hang up before saying goodbye."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -49,14 +49,16 @@ class Receptionist(Agent):
         return {"ended": True, "reason": reason}
 
 
-pipeline = Pipeline(
-    stt=GoogleSTT(model="latest_long", location="global", stream=True),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=GoogleSTT(model="latest_long", location="global", stream=True),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo_large"),
+    )
 
 
 def invoke_agent() -> None:
