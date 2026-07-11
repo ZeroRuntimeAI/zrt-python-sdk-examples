@@ -1,0 +1,12 @@
+{
+  "templates": [
+    {
+      "id": "inference-gateway",
+      "name": "Inference Gateway Agent",
+      "description": "STT, LLM, TTS and turn detection all run on the Zero Runtime inference gateway",
+      "path": ".",
+      "entry": "features/inference_gateway.py",
+      "files": ["features/inference_gateway.py"]
+    }
+  ]
+}
