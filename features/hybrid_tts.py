@@ -45,7 +45,7 @@ def build_pipeline() -> Pipeline:
         llm=GeminiRealtime(config=GeminiLiveConfig()),
         tts=CartesiaTTS(model="sonic-3.5"),
         vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
     )
 
 

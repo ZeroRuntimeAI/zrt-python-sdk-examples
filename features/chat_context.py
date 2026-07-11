@@ -63,7 +63,7 @@ def build_pipeline() -> Pipeline:
                       reasoning_effort="none", verbosity="low"),
         tts=CartesiaTTS(model="sonic-3.5"),
         vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
         # Keep the prompt within a token budget; always retain the last few turns.
         context_window=ContextWindow(max_tokens=800, keep_recent_turns=4),
     )

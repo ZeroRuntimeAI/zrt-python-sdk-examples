@@ -55,7 +55,7 @@ def build_pipeline() -> Pipeline:
         llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
         tts=SarvamAITTS(),
         vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
     )
 
     @pipeline.on("user_turn_start")

@@ -69,7 +69,7 @@ def build_pipeline() -> Pipeline:
         llm=GoogleLLM(model="gemini-2.5-flash"),
         tts=CartesiaTTS(model="sonic-3.5"),
         vad=SileroVAD(threshold=0.4),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
     )
 
 

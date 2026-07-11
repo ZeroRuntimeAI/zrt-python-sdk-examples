@@ -61,7 +61,7 @@ def build_pipeline() -> Pipeline:
                       reasoning_effort="none", verbosity="low"),
         tts=DeepgramTTS(),
         vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
         wake_up=10,              # nudge after 10s of caller silence
         wake_up_max_attempts=3,  # end the call after 3 nudges
     )

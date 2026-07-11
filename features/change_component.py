@@ -100,7 +100,7 @@ def build_pipeline() -> Pipeline:
         llm=GoogleLLM(model="gemini-2.5-flash"),
         tts=LANGUAGES["en"]["tts"](),
         vad=SileroVAD(threshold=0.4),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
     )
 
 

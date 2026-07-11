@@ -57,7 +57,7 @@ pipeline hooks.
 | `pronunciation.py`          | `stt_word_substitutions` + filler filtering                                                  |
 | `pubsub.py`                 | Room pub/sub chat; mirror replies to a `CHAT` topic (`publish_message` / `subscribe_pubsub`) |
 | `wakeup_call.py`            | Re-engage a silent caller via `on_wake_up()`                                                 |
-| `inference_gateway.py`      | Gateway turn detection (`TurnDetector(model="echo_large")`)                                  |
+| `inference_gateway.py`      | Gateway turn detection (`TurnDetector(model="echo-large")`)                                  |
 | `chat_context.py`           | `ContextWindow` budget + `get_context_history()` recap                                       |
 
 ### `use_case/`

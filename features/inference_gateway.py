@@ -1,7 +1,7 @@
 """
 18 · Inference Gateway turn detection: run turn-taking on Zero Runtime's gateway.
 
-Feature:  Instead of a locally-configured detector, TurnDetector(model="echo_large")
+Feature:  Instead of a locally-configured detector, TurnDetector(model="echo-large")
           from zrt.inference runs turn detection on the Zero Runtime Inference
           Gateway. Drop it into the pipeline's turn_detector slot exactly like a plugin
           detector; the gateway handles end-of-utterance classification.
@@ -56,8 +56,8 @@ def build_pipeline() -> Pipeline:
         llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
         tts=CartesiaTTS(),
         vad=SileroVAD(),
-        # echo_large runs on the inference gateway (gRPC), unlike the local model="namo".
-        turn_detector=TurnDetector(model="echo_large"),
+        # echo-large runs on the inference gateway (gRPC), unlike the local model="namo".
+        turn_detector=TurnDetector(model="echo-large"),
     )
 
 

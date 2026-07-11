@@ -38,7 +38,7 @@ def build_pipeline() -> Pipeline:
                       reasoning_effort="none", verbosity="low"),
         tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
         vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo_large"),
+        turn_detector=TurnDetector(model="echo-large"),
         eou_config=EOUConfig(
             mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
         interrupt_config=InterruptConfig(mode="HYBRID"),
