@@ -22,9 +22,8 @@ SDK plugins are thin config; the runtime does the heavy lifting in the cloud.
 - A Zero Runtime endpoint + auth token (`ZRT_RUNTIME_ADDRESS`, `ZRT_AUTH_TOKEN`)
 - API key(s) for the providers your example uses (Deepgram, Google, Cartesia, …)
 
-`setup.sh` prefers [`uv`](https://docs.astral.sh/uv/) for a fast, reproducible
-install (`uv.lock` is committed); if `uv` isn't present it falls back to
-`python -m venv` + `pip`.
+`setup.sh` prefers [`uv`](https://docs.astral.sh/uv/) for a fast install; if
+`uv` isn't present it falls back to `python -m venv` + `pip`.
 
 ## Examples
 
@@ -83,4 +82,7 @@ pipeline hooks.
 | `zrt.serve(Agent, on_ready=...)`       | Registers the agent and listens for sessions.                                                                                                                                         |
 | `zrt.invoke(AGENT_ID, room=Room(...))` | Starts a session for a registered agent (returns a `playground_url`).                                                                                                                 |
 
-More: https://github.com/ZeroRuntimeAI/zrt-python-sdk-examples
+
+## License
+
+MIT — see [LICENSE](LICENSE).
