@@ -1,5 +1,5 @@
 """
-Lead qualification — SaaS inbound SDR voice agent.
+Lead qualification: SaaS inbound SDR voice agent.
 
 Feature:  STT -> LLM -> TTS cascade; BANT-style qualify, score, then demo or route.
 Pipeline: Google (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
@@ -25,18 +25,20 @@ def _ist_now() -> str:
 AGENT_ID = "lead-qual-agent-py"
 
 
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=GoogleSTT(model="chirp_3", location="us", stream=True),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        eou_config=EOUConfig(
+            mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
+        interrupt_config=InterruptConfig(mode="HYBRID"),
+    )
 
-pipeline = Pipeline(
-    stt=GoogleSTT(model="chirp_3", location="us", stream=True),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    eou_config=EOUConfig(
-        mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
-    interrupt_config=InterruptConfig(mode="HYBRID"),
-)
 
 class LeadQualAgent(Agent):
     def __init__(self) -> None:
@@ -47,7 +49,7 @@ class LeadQualAgent(Agent):
                 f"Today's date and time is {_ist_now()} (IST). "
                 "You are an inbound Sales Development Representative for Northwind Analytics, a SaaS "
                 "data platform. Your job is to qualify inbound leads using a BANT framework: Budget, "
-                "Authority, Need, and Timeline. Be warm, consultative, and concise — this is a phone "
+                "Authority, Need, and Timeline. Be warm, consultative, and concise; this is a phone "
                 "conversation, not an interrogation. "
                 "Ask about their budget range, their timeline to purchase, and whether they are the "
                 "decision maker, then call qualify_lead with those answers. Next call score_lead to get "
@@ -55,9 +57,9 @@ class LeadQualAgent(Agent):
                 "If the lead is qualified, offer to book a product demo: collect their email and a "
                 "preferred slot and call book_demo. If they are not qualified or want to be routed, call "
                 "route_to_sales with the tier so the right rep follows up. Always confirm the email back "
-                "to the caller before booking. Never fabricate scores — use the tools."
+                "to the caller before booking. Never fabricate scores; use the tools."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -69,7 +71,7 @@ class LeadQualAgent(Agent):
         )
 
     async def on_exit(self) -> None:
-        await self.session.say("Thanks so much for your time — we'll be in touch shortly. Take care!")
+        await self.session.say("Thanks so much for your time; we'll be in touch shortly. Take care!")
 
     @function_tool
     async def qualify_lead(self, budget: str, timeline: str, decision_authority: str) -> dict:

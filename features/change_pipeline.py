@@ -4,7 +4,7 @@ import os
 
 import zrt
 from zrt import Agent, Pipeline, Room
-from zrt.plugins import CartesiaTTS, DeepgramSTT, GeminiLiveConfig, GeminiRealtime, GoogleLLM, SileroVAD, TurnDetector
+from zrt.plugins import CartesiaTTS, DeepgramSTT, GeminiLiveConfig, GeminiRealtime, GoogleLLM, SileroVAD, TurnDetector, DeepgramTTS
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -23,7 +23,7 @@ class Assistant(Agent):
             name="Assistant",
             agent_id=AGENT_ID,
             instructions="You are a friendly voice assistant. Chat naturally with the caller.",
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
         self._switch_task: asyncio.Task | None = None
 
@@ -31,7 +31,7 @@ class Assistant(Agent):
         logger.info("[assistant] session started in cascade mode")
         await self.session.say(
             f"Hi! I'm on a cascade pipeline. In {int(SWITCH_AFTER)} seconds I'll try to "
-            "switch myself to a realtime model — watch the logs."
+            "switch myself to a realtime model; watch the logs."
         )
         self._switch_task = asyncio.create_task(self._try_switch())
 
@@ -42,16 +42,19 @@ class Assistant(Agent):
 
     async def _try_switch(self) -> None:
         await asyncio.sleep(SWITCH_AFTER)
-        logger.info("[switch] attempting cascade -> realtime via change_pipeline")
+        logger.info(
+            "[switch] attempting cascade -> hybrid_tts via change_pipeline")
         try:
             await self.session.pipeline.change_pipeline(
-                llm=GeminiRealtime(config=GeminiLiveConfig()),
+                llm=GeminiRealtime(config=GeminiLiveConfig(
+                    model="gemini-3.1-flash-live-preview", voice="Puck")),
+                tts=DeepgramTTS(),
             )
         except ValueError as e:
             # Shape is fixed at session creation: cascade -> realtime can't be done live.
             logger.info("[switch] rejected as expected: %s", e)
             await self.session.say(
-                "As expected, I can't switch to realtime mid-call — the pipeline shape is "
+                "As expected, I can't switch to realtime mid-call; the pipeline shape is "
                 "fixed when the session starts."
             )
             return
@@ -59,18 +62,21 @@ class Assistant(Agent):
         await self.session.say("I switched to a realtime model!")
 
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(language="en"),
-    llm=GoogleLLM(model="gemini-2.5-flash"),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(threshold=0.4),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(language="en"),
+        llm=GoogleLLM(model="gemini-2.5-flash"),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(threshold=0.4),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""
-    logger.info("[startup] agent registered — inviting caller into the playground")
+    logger.info(
+        "[startup] agent registered; inviting caller into the playground")
     zrt.invoke(AGENT_ID, room=Room(playground=True))
 
 

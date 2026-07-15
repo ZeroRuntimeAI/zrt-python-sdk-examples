@@ -17,9 +17,9 @@ class Assistant(Agent):
                 "You are a voice assistant whose tools are auto-discovered from the "
                 "connected MCP servers. Use the available tools to answer the user."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
             mcp_servers=[
-                # Placeholders — replace with real MCP servers in production.
+                # Placeholders; replace with real MCP servers in production.
                 MCPServerStdio(command="uvx", args=["mcp-server-time"]),
                 MCPServerHTTP(
                     url="https://example.com/mcp-server-weather",
@@ -34,14 +34,16 @@ class Assistant(Agent):
         await self.session.say("Goodbye!")
 
 
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:

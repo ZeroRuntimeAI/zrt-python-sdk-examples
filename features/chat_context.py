@@ -1,5 +1,5 @@
 """
-19 · Chat context — manage the conversation window and read the history back.
+19 · Chat context: manage the conversation window and read the history back.
 
 Feature:  Two chat-context tools the SDK exposes:
             - ContextWindow on the Pipeline: the runtime keeps the prompt within a token
@@ -31,7 +31,7 @@ class Assistant(Agent):
                 "You are a helpful assistant. Keep replies short. When the caller asks what "
                 "you've talked about, call recap_conversation and summarize it for them."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -55,16 +55,18 @@ class Assistant(Agent):
         return {"turn_count": len(turns), "recent_turns": turns}
 
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(model="nova-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    # Keep the prompt within a token budget; always retain the last few turns.
-    context_window=ContextWindow(max_tokens=800, keep_recent_turns=4),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(model="nova-2"),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        # Keep the prompt within a token budget; always retain the last few turns.
+        context_window=ContextWindow(max_tokens=800, keep_recent_turns=4),
+    )
 
 
 def invoke_agent() -> None:

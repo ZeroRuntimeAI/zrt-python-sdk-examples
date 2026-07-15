@@ -1,5 +1,5 @@
 """
-Support chatbot — a text + voice helpdesk for "Nimbus" driven over a "CHAT" pub/sub topic.
+Support chatbot: a text + voice helpdesk for "Nimbus" driven over a "CHAT" pub/sub topic.
 
 Feature:  A website helpdesk that talks over room pub/sub, so a chat widget and the voice
           stream share one conversation:
@@ -7,7 +7,7 @@ Feature:  A website helpdesk that talks over room pub/sub, so a chat widget and 
               CHAT; the agent feeds it to the LLM with session.generate() (skipping its own
               echoes so it never answers itself).
             - PUBLISHES to "CHAT": every finished reply is mirrored to CHAT (via turn_complete)
-              so the widget shows the agent's text — and it speaks the same answer via TTS.
+              so the widget shows the agent's text; and it speaks the same answer via TTS.
           Domain tools (search_help, check_service_status, create_ticket, connect_to_human)
           resolve the request; their answers flow back to the widget through the same topic.
 Pipeline: Cartesia ink-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
@@ -27,25 +27,30 @@ AGENT_ID = "support-chatbot-agent-py"
 AGENT_NAME = "NimbusHelpdesk"
 CHAT_TOPIC = "CHAT"   # shared with the embed chat widget
 
-pipeline = Pipeline(
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
-)
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
+    )
+
+
 class SupportChatbot(Agent):
     def __init__(self) -> None:
         super().__init__(
             name=AGENT_NAME,
             agent_id=AGENT_ID,
             instructions=(
-                "You are Nimbus's helpdesk assistant — Nimbus is a project-management SaaS. "
+                "You are Nimbus's helpdesk assistant; Nimbus is a project-management SaaS. "
                 "Keep replies short, warm, and plain-text (this is shown in a chat widget and "
                 "read aloud). Answer how-to questions by calling search_help with the topic. "
                 "If a visitor reports an outage or things being down, call check_service_status. "
                 "If you cannot resolve their problem, call create_ticket with a clear summary and "
                 "a priority (low, medium, or high). If they're frustrated or ask for a person, "
                 "call connect_to_human. Always confirm details back. Never invent help content, "
-                "ticket data, or system status — use the tools."
+                "ticket data, or system status; use the tools."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
         self._tasks: set[asyncio.Task] = set()
 
@@ -60,7 +65,7 @@ class SupportChatbot(Agent):
             options={"persist": True},
         ))
         await self.session.say(
-            "Hi, you've reached Nimbus support. You can type in the chat or just talk — "
+            "Hi, you've reached Nimbus support. You can type in the chat or just talk; "
             "what can I help you with?"
         )
 
@@ -70,7 +75,7 @@ class SupportChatbot(Agent):
     # --- CHAT pub/sub wiring ----------------------------------------------
 
     def _on_chat(self, msg: dict) -> None:
-        """A visitor typed in the widget. Synchronous callback — feed real messages to the
+        """A visitor typed in the widget. Synchronous callback; feed real messages to the
         LLM on a task, and skip the agent's own mirrored replies to avoid a loop."""
         text = (msg.get("message") or "").strip()
         if not text or msg.get("sender_name") == AGENT_NAME:
@@ -126,7 +131,7 @@ class SupportChatbot(Agent):
 
         Args:
             summary: A short description of the visitor's problem.
-            priority: Ticket priority — one of "low", "medium", or "high".
+            priority: Ticket priority; one of "low", "medium", or "high".
         """
         # Replace with a real ticketing system (Zendesk/Jira) write in production.
         return {"status": "ticket_created", "ticket_id": "NMB-50918", "summary": summary, "priority": priority}
@@ -140,7 +145,6 @@ class SupportChatbot(Agent):
         """
         # Replace with a real live-chat / routing integration in production.
         return {"status": "handoff_started", "reason": reason, "eta_minutes": 5}
-
 
 
 def invoke_agent() -> None:

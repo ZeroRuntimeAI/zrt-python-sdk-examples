@@ -32,7 +32,7 @@ class Assistant(Agent):
                 "You are a phone assistant. Ask the caller to press 0 for an agent or "
                 "enter their 4-digit PIN. Use check_account to verify their PIN."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -62,15 +62,18 @@ voice_mail_detector = VoiceMailDetector(
     auto_hangup=True,
 )
 
-pipeline = Pipeline(
-    stt=SarvamAISTT(),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    dtmf_handler=dtmf_handler,
-    voice_mail_detector=voice_mail_detector,
-)
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=SarvamAISTT(),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        dtmf_handler=dtmf_handler,
+        voice_mail_detector=voice_mail_detector,
+    )
 
 
 def invoke_agent() -> None:

@@ -1,5 +1,5 @@
 """
-06 · Background audio — ambient music mixed under the conversation.
+06 · Background audio: ambient music mixed under the conversation.
 
 Feature:  Play a looping ambient track (office-noise.mp3, bundled next to this file)
           underneath the agent's voice. The user can start/stop it via function tools.
@@ -31,7 +31,7 @@ class Assistant(Agent):
                 "Keep replies short. Use the start_music and stop_music tools when the "
                 "user asks to control the ambient track."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -71,13 +71,15 @@ class Assistant(Agent):
         return "Background music stopped."
 
 
-pipeline = Pipeline(
-    stt=DeepgramSTT(),
-    llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=DeepgramSTT(),
+        llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:

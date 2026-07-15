@@ -1,5 +1,5 @@
 """
-Medical triage — nurse-line agent that triages symptoms and routes to a specialist.
+Medical triage: nurse-line agent that triages symptoms and routes to a specialist.
 
 Feature:  A triage agent assesses symptoms and urgency, then hands off to a
           cardiology or general-medicine specialist via agent_switch(...).
@@ -106,14 +106,17 @@ class GeneralMedicineAgent(Agent):
         }
 
 
-pipeline = Pipeline(
-    stt=GoogleSTT(model="chirp_3", location="us", stream=True),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    stt_word_substitutions=WORD_SUBSTITUTIONS
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=GoogleSTT(model="chirp_3", location="us", stream=True),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        stt_word_substitutions=WORD_SUBSTITUTIONS
+    )
+
 
 class TriageAgent(Agent):
     def __init__(self) -> None:
@@ -126,15 +129,15 @@ class TriageAgent(Agent):
                 "and figure out where to send them. "
                 "First call assess_symptoms to record what they describe, then call check_urgency "
                 "to gauge how serious it is. "
-                "SAFETY: If the caller describes any life-threatening emergency — severe chest pain, "
+                "SAFETY: If the caller describes any life-threatening emergency; severe chest pain, "
                 "difficulty breathing, signs of stroke (face drooping, slurred speech, weakness), "
-                "uncontrolled bleeding, or loss of consciousness — immediately tell them to hang up "
+                "uncontrolled bleeding, or loss of consciousness; immediately tell them to hang up "
                 "and call emergency services (911 or local equivalent). Do not delay with tools. "
                 "You are NOT a substitute for a doctor and must not give a diagnosis. "
                 "For chest pain, palpitations, or other cardiac symptoms, call route_to_cardiology. "
                 "For all other concerns, call route_to_general. Keep replies short and calm."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
             agents=[CardiologyAgent(), GeneralMedicineAgent()],
         )
 
@@ -193,7 +196,6 @@ class TriageAgent(Agent):
             None.
         """
         return agent_switch(to=GENERAL_MEDICINE_AGENT_ID, reason="non-cardiac symptoms", inherit_context=True)
-
 
 
 def invoke_agent() -> None:

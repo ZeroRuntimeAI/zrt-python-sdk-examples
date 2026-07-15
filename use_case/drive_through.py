@@ -1,5 +1,5 @@
 """
-Drive-through — fast-food order taker with snappy turn-taking.
+Drive-through: fast-food order taker with snappy turn-taking.
 
 Feature:  Order-taking agent that tracks a running order on the instance, upsells once,
           and confirms the total. Tuned for low-latency, barge-in-friendly conversation.
@@ -27,16 +27,19 @@ def _ist_now() -> str:
 AGENT_ID = "drive-through-agent-py"
 
 
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=GroqLLM(model="llama-3.3-70b-versatile"),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    eou_config=EOUConfig(
-        mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
-    interrupt_config=InterruptConfig(mode="HYBRID"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=GroqLLM(model="llama-3.3-70b-versatile"),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        eou_config=EOUConfig(
+            mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
+        interrupt_config=InterruptConfig(mode="HYBRID"),
+    )
+
 
 class DriveThroughAgent(Agent):
     def __init__(self) -> None:
@@ -48,17 +51,17 @@ class DriveThroughAgent(Agent):
                 "You are the order taker at a fast-food drive-through. Be quick, friendly, and "
                 "concise. Take the customer's order item by item, calling add_item for each item "
                 "with its quantity and remove_item if they change their mind. "
-                "Upsell exactly once — after the first item or two, suggest a combo, drink, or "
+                "Upsell exactly once; after the first item or two, suggest a combo, drink, or "
                 "dessert, but do not pester the customer if they decline. "
                 "When they say they're done, call get_order_summary, read the items and total back "
                 "to them, and once they confirm, call confirm_and_place_order. "
-                "Keep every reply short — this is a drive-through, not a chat."
+                "Keep every reply short; this is a drive-through, not a chat."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
         self._order: list[dict] = []
 
-        @pipeline.on("llm_messages")
+        @self.pipeline.on("llm_messages")
         def inject_live_order(data: dict) -> dict:
 
             lines = ", ".join(

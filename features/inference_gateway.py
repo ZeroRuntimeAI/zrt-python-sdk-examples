@@ -1,10 +1,10 @@
 """
-18 · Inference Gateway turn detection — run turn-taking on Zero Runtime's gateway.
+18 · Inference Gateway turn detection: run turn-taking on Zero Runtime's gateway.
 
 Feature:  Instead of a locally-configured detector, TurnDetector(model="echo-large")
           from zrt.inference runs turn detection on the Zero Runtime Inference
           Gateway. Drop it into the pipeline's turn_detector slot exactly like a plugin
-          detector — the gateway handles end-of-utterance classification.
+          detector; the gateway handles end-of-utterance classification.
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Inference-Gateway turn detector
 Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
 Run:      uv run features/inference_gateway.py
@@ -29,7 +29,7 @@ class Assistant(Agent):
                 "You are a friendly assistant. Keep replies short. The turn detection for this "
                 "agent runs on the Zero Runtime inference gateway."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -49,14 +49,16 @@ class Assistant(Agent):
         return {"part_of_day": "afternoon", "greeting": "Good afternoon"}
 
 
-pipeline = Pipeline(
-    stt=SarvamAISTT(),
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    tts=CartesiaTTS(),
-    vad=SileroVAD(),
-    # echo-large runs on the inference gateway (gRPC), unlike the local model="namo".
-    turn_detector=TurnDetector(model="echo_large"),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=SarvamAISTT(),
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
+        tts=CartesiaTTS(),
+        vad=SileroVAD(),
+        # echo-large runs on the inference gateway (gRPC), unlike the local model="namo".
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:

@@ -1,5 +1,5 @@
 """
-17 · Wake-up call — re-engage a caller who has gone silent.
+17 · Wake-up call: re-engage a caller who has gone silent.
 
 Feature:  Pipeline(wake_up=<seconds>) arms a silence timer. If the caller stops
           speaking for that long, the runtime calls the agent's on_wake_up() hook, which
@@ -10,7 +10,7 @@ Run:      uv run features/wakeup_call.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaSTT, OpenAILLM, SarvamAITTS, SileroVAD, TurnDetector
+from zrt.plugins import CartesiaSTT, OpenAILLM, SarvamAITTS, SileroVAD, TurnDetector, DeepgramTTS
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -27,12 +27,12 @@ class PatientAgent(Agent):
                 "You are a patient assistant. Answer questions and help the caller. If they go "
                 "quiet, you'll gently check in on them."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
         self._nudges = 0
 
     async def on_enter(self) -> None:
-        await self.session.say("Hi! Take your time — I'm here whenever you're ready.")
+        await self.session.say("Hi! Take your time; I'm here whenever you're ready.")
 
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
@@ -53,15 +53,18 @@ class PatientAgent(Agent):
         return {"topics": ["account", "billing", "technical support"]}
 
 
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=SarvamAITTS(streaming=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="echo_large"),
-    wake_up=10,              # nudge after 10s of caller silence
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        wake_up=10,              # nudge after 10s of caller silence
+        wake_up_max_attempts=3,  # end the call after 3 nudges
+    )
 
 
 def invoke_agent() -> None:
