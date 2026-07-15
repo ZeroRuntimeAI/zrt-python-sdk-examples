@@ -1,5 +1,5 @@
 """
-Collections — respectful, compliance-first payment reminder voice agent.
+Collections: respectful, compliance-first payment reminder voice agent.
 
 Feature:  STT -> LLM -> TTS cascade; identity-verify first, capture promise-to-pay, honor stop-contact.
 Pipeline: Deepgram (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
@@ -28,17 +28,35 @@ def _ist_now() -> str:
 
 
 AGENT_ID = "collections-agent-py"
-pipeline = Pipeline(
-    stt=SarvamAISTT(),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-    eou_config=EOUConfig(
-        mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
-    interrupt_config=InterruptConfig(mode="HYBRID"),
-)
+
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline (with its compliance hook); serve() builds a new agent + pipeline ."""
+    pipeline = Pipeline(
+        stt=SarvamAISTT(),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+        eou_config=EOUConfig(
+            mode="ADAPTIVE", min_max_speech_wait_timeout=[0.2, 0.4]),
+        interrupt_config=InterruptConfig(mode="HYBRID"),
+    )
+
+    @pipeline.on("llm_messages")
+    def enforce_compliance(data: dict) -> dict:
+        guardrail = {
+            "role": "system",
+            "content": (
+                "COMPLIANCE GUARDRAIL (applies to this turn): stay calm and respectful, never "
+                "threaten or imply legal action, and do not reveal any account detail unless the "
+                "caller's identity has already been verified."
+            ),
+        }
+        return {"messages": [guardrail, *data["messages"]]}
+
+    return pipeline
 
 
 class CollectionsAgent(Agent):
@@ -50,21 +68,21 @@ class CollectionsAgent(Agent):
                 f"Today's date and time is {_ist_now()} (IST). "
                 "You are a respectful, compliance-first account-services representative for Cedar Bank. "
                 "Your purpose is to remind the customer about a past-due balance and help them arrange "
-                "payment — never to pressure, threaten, or harass. "
+                "payment; never to pressure, threaten, or harass. "
                 "COMPLIANCE RULES (always follow): "
                 "1) Verify identity FIRST. Before discussing ANY account detail, ask for the customer's "
                 "full name and date of birth and call verify_identity. If verification fails, politely "
                 "decline to share account details. "
                 "2) Be calm, empathetic, and respectful at all times. Speak in short, kind sentences. "
                 "3) If the customer asks you to stop contacting them at any point, immediately call "
-                "honor_stop_contact and confirm you will not call again — do not push back. "
+                "honor_stop_contact and confirm you will not call again; do not push back. "
                 "4) Never threaten legal action, never imply consequences you cannot verify. "
                 "After verification, you may call get_account_balance to share the amount due. If the "
                 "customer offers to pay, capture the amount and a date with record_promise_to_pay. If the "
                 "situation is complex (dispute, hardship), call escalate_to_specialist. Always use the "
-                "tools — never invent balances or outcomes."
+                "tools; never invent balances or outcomes."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -146,22 +164,6 @@ class CollectionsAgent(Agent):
             "account_id": account_id,
             "future_contact_suppressed": True,
         }
-
-
-
-
-@pipeline.on("llm_messages")
-def enforce_compliance(data: dict) -> dict:
-    guardrail = {
-        "role": "system",
-        "content": (
-            "COMPLIANCE GUARDRAIL (applies to this turn): stay calm and respectful, never "
-            "threaten or imply legal action, and do not reveal any account detail unless the "
-            "caller's identity has already been verified."
-        ),
-    }
-    return {"messages": [guardrail, *data["messages"]]}
-
 
 
 def invoke_agent() -> None:

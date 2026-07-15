@@ -1,12 +1,11 @@
 """
-02 · Function tools — chaining multiple tools in one turn.
+02 · Function tools: chaining multiple tools in one turn.
 
 Feature:  Three tools the LLM can call and chain (forecast -> clothing) in a single reply.
 Pipeline: Google (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
 Env:      ZRT_AUTH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, OPENAI_API_KEY, DEEPGRAM_API_KEY
 Run:      uv run features/function_tools.py
 """
-
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import DeepgramTTS, GoogleSTT, OpenAILLM, SileroVAD, TurnDetector
@@ -16,15 +15,6 @@ load_dotenv(override=True)
 
 AGENT_ID = "function-tools-agent-py002"
 
-
-pipeline = Pipeline(
-    stt=GoogleSTT(model="chirp_3", location="us", stream=True),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-thalia-en"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 
 class Assistant(Agent):
     def __init__(self) -> None:
@@ -37,7 +27,7 @@ class Assistant(Agent):
                 "then pass the resulting condition and temperature into recommend_clothing, "
                 "and summarize the advice. Use get_weather for simple current conditions."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -86,6 +76,17 @@ class Assistant(Agent):
         extras = "an umbrella" if condition.lower() == "rainy" else "sunglasses"
         return {"condition": condition, "temp_c": temp_c, "wear": layers, "bring": extras}
 
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=GoogleSTT(model="chirp_3", location="us", stream=True),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-thalia-en"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:

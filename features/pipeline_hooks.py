@@ -1,33 +1,21 @@
-"""
-03 · Pipeline hooks — observing the dataflow without changing it.
-
-Feature:  Register observation-only hooks on pipeline events (user/agent turns + llm output).
-          These hooks are for logging/observability; they do NOT mutate the pipeline data.
-Pipeline: Cartesia (STT) · Groq (LLM) · Sarvam (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, GROQ_API_KEY, SARVAM_API_KEY
-Run:      uv run features/pipeline_hooks.py
-"""
+import logging
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-
 import zrt
-from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaSTT, CartesiaTTS, GroqLLM, SarvamAITTS, SileroVAD, TurnDetector
+from zrt import Agent, Pipeline, Room, function_tool, run_stt, run_tts
+from zrt.plugins import CartesiaSTT, CartesiaTTS, GroqLLM, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "pipeline-hooks-agent-py03"
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
+
+AGENT_ID = "pipeline-hooks-agent"
 
 
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=GroqLLM(model="llama-3.3-70b-versatile"),
-    tts=CartesiaTTS(model="sonic-3.5"),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -37,7 +25,7 @@ class Assistant(Agent):
                 "You are a concise voice assistant. Keep replies short and natural. "
                 "When asked for the time, call the get_time tool."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -54,37 +42,100 @@ class Assistant(Agent):
         Args:
             timezone: IANA timezone name such as America/New_York or Asia/Kolkata.
         """
-        # replace with real API in production
         try:
             now = datetime.now(ZoneInfo(timezone))
             return {"timezone": timezone, "time": now.strftime("%H:%M:%S"), "date": now.strftime("%Y-%m-%d")}
         except Exception:
             return {"timezone": timezone, "error": "Unknown timezone"}
 
-@pipeline.on("user_turn_start")
-async def on_user_turn_start(transcript: str) -> None:
-    print(f"[hook] user_turn_start: {transcript!r}")
 
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline (with its hooks); serve() builds a new agent + pipeline ."""
+    pipeline = Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=GroqLLM(model="llama-3.3-70b-versatile"),
+        tts=CartesiaTTS(model="sonic-3.5"),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
-@pipeline.on("user_turn_end")
-async def on_user_turn_end() -> None:
-    print("[hook] user_turn_end")
+    @pipeline.on("stt")
+    async def stt_hook(audio_stream):
+        """Preprocess audio before STT, then normalize the transcript after it."""
+        async def audio_phase():
+            async for audio in audio_stream:
+                if len(audio) < 300:
+                    continue
+                yield audio
 
+        async for event in run_stt(audio_phase()):
+            if event.data and event.data.text:
+                text = event.data.text.lower()
+                text = re.sub(r"\b(uh|um|like)\b", "", text)
 
-@pipeline.on("agent_turn_start")
-async def on_agent_turn_start() -> None:
-    print("[hook] agent_turn_start")
+                replacements = {
+                    "working hours": "office hours",
+                    "timing": "office hours",
+                }
+                for src, dst in replacements.items():
+                    text = re.sub(rf"\b{src}\b", dst, text)
 
+                event.data.text = " ".join(text.split())
+                logging.info(f"[STT] {event.data.text}")
 
-@pipeline.on("agent_turn_end")
-async def on_agent_turn_end() -> None:
-    print("[hook] agent_turn_end")
+            yield event
 
+    @pipeline.on("llm")
+    async def llm_text_filter(text_stream):
+        """Streaming LLM hook: rewrite text chunks in real time before they reach TTS.
 
-@pipeline.on("llm")
-async def on_llm(data: dict) -> None:
-    print(
-        f"[hook] llm: text={data.get('text')!r} interrupted={data.get('interrupted')}")
+        Swapping a few common words makes the change clearly AUDIBLE in the agent's
+        speech (and logged), proving in-flight per-token modification. Each chunk is
+        processed and replaced as it streams from the LLM.
+        """
+        word_swaps = {
+            "office": "business",
+            "available": "around",
+            "anytime": "any time",
+            "hello": "hey",
+            "hi": "hey",
+            "hey": "hello apple",
+        }
+        async for chunk in text_stream:
+            original = chunk
+            for src, dst in word_swaps.items():
+                chunk = re.sub(rf"(?i)\b{src}\b", dst, chunk)
+            if chunk != original:
+                logging.info(f"[LLM STREAM] {original!r} -> {chunk!r}")
+            yield chunk
+
+    @pipeline.on("tts")
+    async def tts_hook(text_stream):
+        """Final text shaping just before speech synthesis."""
+        async def preprocess_text():
+            async for text in text_stream:
+                yield text.replace("Hello", "Heyy")
+
+        async for audio in run_tts(preprocess_text()):
+            yield audio
+
+    @pipeline.on("user_turn_start")
+    async def on_user_turn_start(transcript: str) -> None:
+        print(f"[hook] user_turn_start: {transcript!r}")
+
+    @pipeline.on("user_turn_end")
+    async def on_user_turn_end() -> None:
+        print("[hook] user_turn_end")
+
+    @pipeline.on("agent_turn_start")
+    async def on_agent_turn_start() -> None:
+        print("[hook] agent_turn_start")
+
+    @pipeline.on("agent_turn_end")
+    async def on_agent_turn_end() -> None:
+        print("[hook] agent_turn_end")
+
+    return pipeline
 
 
 def invoke_agent() -> None:

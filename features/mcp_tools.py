@@ -1,13 +1,3 @@
-"""
-09 · MCP tools — tools auto-discovered from MCP servers.
-
-Feature:  Agent wired to MCP servers (stdio + HTTP). Tools are discovered at
-          runtime from the servers — no local @function_tool needed.
-Pipeline: Cartesia ink-2 (STT) · OpenAI gpt-5.4-nano (LLM) · Deepgram aura-2-thalia (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
-Run:      uv run features/mcp_tools.py
-"""
-
 import zrt
 from zrt import Agent, Pipeline, Room, MCPServerStdio, MCPServerHTTP
 from zrt.plugins import CartesiaSTT, DeepgramTTS, OpenAILLM, SileroVAD, TurnDetector
@@ -18,16 +8,6 @@ load_dotenv(override=True)
 AGENT_ID = "mcp-tools-agent-py09"
 
 
-
-pipeline = Pipeline(
-    stt=CartesiaSTT(model="ink-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
-
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -37,9 +17,9 @@ class Assistant(Agent):
                 "You are a voice assistant whose tools are auto-discovered from the "
                 "connected MCP servers. Use the available tools to answer the user."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
             mcp_servers=[
-                # Placeholders — replace with real MCP servers in production.
+                # Placeholders; replace with real MCP servers in production.
                 MCPServerStdio(command="uvx", args=["mcp-server-time"]),
                 MCPServerHTTP(
                     url="https://example.com/mcp-server-weather",
@@ -53,6 +33,17 @@ class Assistant(Agent):
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
 
+
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        stt=CartesiaSTT(model="ink-2"),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
 
 
 def invoke_agent() -> None:

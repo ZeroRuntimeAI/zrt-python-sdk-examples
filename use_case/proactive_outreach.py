@@ -1,5 +1,5 @@
 """
-Proactive outreach — outbound subscription-renewal call with re-engagement.
+Proactive outreach: outbound subscription-renewal call with re-engagement.
 
 Feature:  The agent opens the call proactively, explains an upcoming renewal, and offers a
           retention discount before accepting a cancellation. A wake_up nudge re-engages a
@@ -27,16 +27,19 @@ def _ist_now() -> str:
 AGENT_ID = "outreach-agent-py"
 
 
-pipeline = Pipeline(
-    # If the customer goes quiet for 8s, proactively re-engage them.
-    wake_up=8,
-    stt=DeepgramSTT(model="nova-2"),
-    llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                  reasoning_effort="none", verbosity="low"),
-    tts=SarvamAITTS(streaming=True),
-    vad=SileroVAD(),
-    turn_detector=TurnDetector(model="namo", language="en", threshold=0.8),
-)
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        # If the customer goes quiet for 8s, proactively re-engage them.
+        wake_up=8,
+        stt=DeepgramSTT(model="nova-2"),
+        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
+                      reasoning_effort="none", verbosity="low"),
+        tts=SarvamAITTS(streaming=True),
+        vad=SileroVAD(),
+        turn_detector=TurnDetector(model="echo-large"),
+    )
+
 
 class OutreachAgent(Agent):
     def __init__(self) -> None:
@@ -49,12 +52,12 @@ class OutreachAgent(Agent):
                 "about a customer's upcoming subscription renewal. "
                 "Open by greeting the customer and explaining their plan renews soon. "
                 "If they want to keep the subscription, call confirm_renewal. "
-                "If they hesitate or want to cancel, do NOT cancel immediately — first acknowledge "
+                "If they hesitate or want to cancel, do NOT cancel immediately; first acknowledge "
                 "their concern and offer a retention discount by calling offer_discount. "
                 "Only if they still want to cancel after the offer should you call process_cancellation "
                 "with their reason. Be respectful of their time and keep replies short and friendly."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
@@ -112,7 +115,6 @@ class OutreachAgent(Agent):
             "reason": reason,
             "effective_date": "2026-07-25",
         }
-
 
 
 def invoke_agent() -> None:

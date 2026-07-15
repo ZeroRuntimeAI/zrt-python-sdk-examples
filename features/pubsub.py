@@ -1,7 +1,7 @@
 """
-16 · Pub/Sub — broadcast the agent's replies to a room "CHAT" topic.
+16 · Pub/Sub: broadcast the agent's replies to a room "CHAT" topic.
 
-Feature:  Room pub/sub — out-of-band text messaging alongside the voice stream.
+Feature:  Room pub/sub; out-of-band text messaging alongside the voice stream.
             - session.publish_message(PubSubPublishConfig(topic=..., message=..., options=...)):
               post text on a named topic to everyone in the room (options={"persist": True}
               keeps it in the room history).
@@ -15,7 +15,6 @@ Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TT
 Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
 Run:      uv run features/pubsub.py
 """
-
 import asyncio
 
 import zrt
@@ -29,9 +28,6 @@ AGENT_ID = "pubsub-chat-agent-py16"
 AGENT_NAME = "ChatAgent"
 CHAT_TOPIC = "CHAT"   # the room pub/sub topic this agent publishes + subscribes on
 
-pipeline = Pipeline(
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
-)
 
 class ChatAgent(Agent):
     def __init__(self) -> None:
@@ -42,7 +38,7 @@ class ChatAgent(Agent):
                 "You are a friendly chat assistant. Keep replies short. When the user asks you "
                 "to post, broadcast, or send something to the chat, call send_chat_message."
             ),
-            pipeline=pipeline,
+            pipeline=build_pipeline(),
         )
         self._tasks: set[asyncio.Task] = set()
 
@@ -102,6 +98,11 @@ class ChatAgent(Agent):
         return {"published": True, "topic": CHAT_TOPIC, "message": message}
 
 
+def build_pipeline() -> Pipeline:
+    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
+    return Pipeline(
+        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0)
+    )
 
 
 def invoke_agent() -> None:
