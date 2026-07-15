@@ -3,6 +3,7 @@ name = "zrt-python-sdk-examples"
 version = "0.1.0"
 description = "Runnable examples for the Zero Runtime Python SDK"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "zrt",
@@ -12,6 +13,3 @@ dependencies = [
 [tool.uv]
 # This repo is a collection of runnable scripts, not a buildable package.
 package = false
-
-[tool.uv.sources]
-zrt = { path = "../zrt-python-sdk", editable = true }
