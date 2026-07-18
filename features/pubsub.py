@@ -1,7 +1,7 @@
 """
 Pub/Sub: broadcast the agent's replies to a room "CHAT" topic.
 
-Feature:  Room pub/sub; out-of-band text messaging alongside the voice stream.
+Feature:  Room pub/sub; text messaging over a named topic (this agent is text-only).
             - session.publish_message(PubSubPublishConfig(topic=..., message=..., options=...)):
               post text on a named topic to everyone in the room (options={"persist": True}
               keeps it in the room history).
@@ -9,9 +9,8 @@ Feature:  Room pub/sub; out-of-band text messaging alongside the voice stream.
               callback gets {topic, message, payload, sender_id, sender_name, timestamp}.
           The agent mirrors each LLM reply to "CHAT" (via the turn_complete event), subscribes
           to "CHAT" to receive messages, and feeds a participant's typed message back to the LLM
-          with session.generate(). A send_chat_message tool lets the model post on request. It
-          still speaks (TTS) too, so the conversation shows up as both voice and text.
-Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
+          with session.generate(). A send_chat_message tool lets the model post on request.
+Pipeline: Google Gemini (LLM) — text over the CHAT pub/sub topic (no STT/TTS)
 Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
 Run:      uv run features/pubsub.py
 """

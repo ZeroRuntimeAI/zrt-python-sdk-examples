@@ -4,8 +4,8 @@ Wake-up call: re-engage a caller who has gone silent.
 Feature:  Pipeline(wake_up=<seconds>) arms a silence timer. If the caller stops
           speaking for that long, the runtime calls the agent's on_wake_up() hook, which
           nudges them. wake_up_max_attempts caps how many nudges before the call ends.
-Pipeline: Cartesia (STT) · OpenAI (LLM) · SarvamAI (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, SARVAM_API_KEY
+Pipeline: Cartesia (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
 Run:      uv run features/wakeup_call.py
 """
 import zrt
