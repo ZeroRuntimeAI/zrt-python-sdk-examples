@@ -14,7 +14,7 @@ from zrt.plugins import DeepgramTTS, GoogleSTT, OpenAILLM, SileroVAD, TurnDetect
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "agent-hangup-agent"
+AGENT_ID = "hangup-agent"
 
 
 class Receptionist(Agent):
