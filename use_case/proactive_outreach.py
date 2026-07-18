@@ -24,7 +24,7 @@ def _ist_now() -> str:
     return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%A, %d %B %Y, %I:%M %p")
 
 
-AGENT_ID = "outreach-agent-py"
+AGENT_ID = "proactive-outreach-agent"
 
 
 def build_pipeline() -> Pipeline:

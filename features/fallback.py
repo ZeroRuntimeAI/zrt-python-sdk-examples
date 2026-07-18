@@ -1,27 +1,26 @@
 """
-05 · Fallback chains: automatic provider failover for STT, LLM, and TTS.
+Fallback chains: automatic provider failover for STT, LLM, and TTS.
 
 Feature:  Each slot is a Fallback wrapper over a list of providers. If the primary
           provider errors out or exceeds its latency budget, the pipeline transparently
           fails over to the next provider in the list; no agent code changes required.
-Pipeline: Fallback STT (Deepgram -> Google) · Fallback LLM (OpenAI -> Google) ·
+Pipeline: Fallback STT (OpenAI -> Deepgram) · Fallback LLM (OpenAI -> Google) ·
           Fallback TTS (Cartesia -> Deepgram) · Silero VAD · Namo turn detector
 Env:      ZRT_AUTH_TOKEN,
-          DEEPGRAM_API_KEY (STT primary + TTS fallback),
-          GOOGLE_APPLICATION_CREDENTIALS (STT fallback), GOOGLE_API_KEY (LLM fallback),
-          OPENAI_API_KEY (LLM primary),
+          OPENAI_API_KEY (STT primary + LLM primary),
+          DEEPGRAM_API_KEY (STT fallback + TTS fallback),
+          GOOGLE_API_KEY (LLM fallback),
           CARTESIA_API_KEY (TTS primary)
 Run:      uv run features/fallback.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, FallbackSTT, FallbackLLM, FallbackTTS
-from zrt.plugins import CartesiaTTS, DeepgramSTT, DeepgramTTS, GoogleLLM, OpenAILLM, SarvamAISTT, SileroVAD, TurnDetector, OpenAISTT, OpenAITTS
-import asyncio
+from zrt.plugins import CartesiaTTS, DeepgramSTT, DeepgramTTS, GoogleLLM, OpenAILLM, SileroVAD, TurnDetector, OpenAISTT
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "fallback-agent-py05"
+AGENT_ID = "fallback-agent"
 
 # Fallback configuration:
 # 1. Define a list of providers (in priority order).

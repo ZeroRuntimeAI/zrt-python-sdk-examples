@@ -1,3 +1,12 @@
+"""
+MCP tools: tools auto-discovered from connected MCP servers.
+
+Feature:  Attach MCP servers (stdio + HTTP); their tools are auto-discovered and made
+          callable by the LLM with no per-tool wiring.
+Pipeline: Cartesia ink-2 (STT) · OpenAI gpt-5.4-nano (LLM) · Deepgram aura-2 (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
+Run:      uv run features/mcp_tools.py
+"""
 import zrt
 from zrt import Agent, Pipeline, Room, MCPServerStdio, MCPServerHTTP
 from zrt.plugins import CartesiaSTT, DeepgramTTS, OpenAILLM, SileroVAD, TurnDetector
@@ -5,7 +14,7 @@ from zrt.plugins import CartesiaSTT, DeepgramTTS, OpenAILLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "mcp-tools-agent-py09"
+AGENT_ID = "mcp-tools-agent"
 
 
 class Assistant(Agent):

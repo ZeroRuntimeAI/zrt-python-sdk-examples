@@ -1,5 +1,5 @@
 """
-02 · Function tools: chaining multiple tools in one turn.
+Function tools: chaining multiple tools in one turn.
 
 Feature:  Three tools the LLM can call and chain (forecast -> clothing) in a single reply.
 Pipeline: Google (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
@@ -13,7 +13,7 @@ from zrt.plugins import DeepgramTTS, GoogleSTT, OpenAILLM, SileroVAD, TurnDetect
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "function-tools-agent-py002"
+AGENT_ID = "function-tools-agent"
 
 
 class Assistant(Agent):

@@ -1,5 +1,5 @@
 """
-08 · Vision: describe the camera on a PubSub trigger.
+Vision: describe the camera on a PubSub trigger.
 
 Feature:  A client publishes {"message": "capture_frames"} on the CHAT PubSub topic
           (e.g. a "capture" button in your UI). On receipt the agent asks the runtime
@@ -25,7 +25,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "vision-agent-py08"
+AGENT_ID = "vision-agent"
 
 # A UI publishes {"message": "capture_frames"} on this topic (e.g. a capture button).
 CHAT_TOPIC = "CHAT"

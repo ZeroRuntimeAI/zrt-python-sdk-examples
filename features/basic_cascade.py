@@ -1,5 +1,5 @@
 """
-01 · Basic cascade: the smallest complete voice agent.
+Basic cascade: the smallest complete voice agent.
 
 Feature:  STT -> LLM -> TTS cascade with VAD + turn detection, one function tool.
 Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
@@ -13,7 +13,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "basic-cascade-agent-py01"
+AGENT_ID = "basic-cascade-agent"
 
 
 class Assistant(Agent):

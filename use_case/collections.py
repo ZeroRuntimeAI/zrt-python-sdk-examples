@@ -2,8 +2,8 @@
 Collections: respectful, compliance-first payment reminder voice agent.
 
 Feature:  STT -> LLM -> TTS cascade; identity-verify first, capture promise-to-pay, honor stop-contact.
-Pipeline: Deepgram (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, OPENAI_API_KEY
+Pipeline: SarvamAI (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, SARVAM_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
 Run:      uv run use_case/collections.py
 
 COMPLIANCE NOTE: This agent is a reminder/assistance tool, not a harassment tool. It must verify
@@ -27,7 +27,7 @@ def _ist_now() -> str:
     return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%A, %d %B %Y, %I:%M %p")
 
 
-AGENT_ID = "collections-agent-py"
+AGENT_ID = "collections-agent"
 
 
 def build_pipeline() -> Pipeline:

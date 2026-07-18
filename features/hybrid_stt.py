@@ -1,3 +1,12 @@
+"""
+Hybrid STT: a cascade STT provider feeding a realtime LLM.
+
+Feature:  Run a dedicated STT provider (Deepgram) in front of a realtime model, so you keep
+          your own transcript while the model produces the audio response (mode="hybrid_stt").
+Pipeline: Deepgram (STT) · Gemini Realtime (LLM, speech-out) · Silero VAD
+Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY
+Run:      uv run features/hybrid_stt.py
+"""
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import DeepgramSTT, GeminiLiveConfig, GeminiRealtime, SileroVAD
@@ -5,7 +14,7 @@ from zrt.plugins import DeepgramSTT, GeminiLiveConfig, GeminiRealtime, SileroVAD
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "hybrid-stt-agent-py11"
+AGENT_ID = "hybrid-stt-agent"
 
 
 class Assistant(Agent):

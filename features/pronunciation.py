@@ -1,5 +1,5 @@
 """
-15 · Pronunciation & transcript shaping: fix misheard terms and drop fillers.
+Pronunciation & transcript shaping: fix misheard terms and drop fillers.
 
 Feature:  Two Pipeline knobs clean up the STT transcript before it reaches the LLM:
             - stt_word_substitutions: map what STT hears to the correct spelling/casing
@@ -18,7 +18,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "pronunciation-agent-py15"
+AGENT_ID = "pronunciation-agent"
 
 
 class SupportAgent(Agent):

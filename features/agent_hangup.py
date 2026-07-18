@@ -1,5 +1,5 @@
 """
-14 · Agent hangup: let the agent end the call itself.
+Agent hangup: let the agent end the call itself.
 
 Feature:  A function tool calls session.hangup() so the agent can gracefully end the
           call once its job is done (e.g. after confirming an order or saying goodbye).
@@ -14,7 +14,7 @@ from zrt.plugins import DeepgramTTS, GoogleSTT, OpenAILLM, SileroVAD, TurnDetect
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "hangup-agent-py14"
+AGENT_ID = "hangup-agent"
 
 
 class Receptionist(Agent):

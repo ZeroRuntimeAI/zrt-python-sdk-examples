@@ -1,5 +1,5 @@
 """
-10 · Agent handoff: triage agent that hands off to specialists.
+Agent handoff: triage agent that hands off to specialists.
 
 Feature:  A triage agent routes the caller to a billing or support specialist via
           agent_switch(...). Each specialist is its own Agent with its own tools.
@@ -14,7 +14,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "triage-agent-py10"
+AGENT_ID = "handoff-agent"
 BILLING_AGENT_ID = "billing-agent"
 SUPPORT_AGENT_ID = "support-agent"
 

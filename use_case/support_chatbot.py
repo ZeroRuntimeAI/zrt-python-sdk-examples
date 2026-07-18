@@ -1,29 +1,29 @@
 """
-Support chatbot: a text + voice helpdesk for "Nimbus" driven over a "CHAT" pub/sub topic.
+Support chatbot: a text helpdesk for "Nimbus" driven over a "CHAT" pub/sub topic.
 
-Feature:  A website helpdesk that talks over room pub/sub, so a chat widget and the voice
-          stream share one conversation:
+Feature:  A website helpdesk driven over room pub/sub, so the chat widget carries the
+          whole conversation:
             - SUBSCRIBES to "CHAT": visitors who type in the widget publish their message on
               CHAT; the agent feeds it to the LLM with session.generate() (skipping its own
               echoes so it never answers itself).
             - PUBLISHES to "CHAT": every finished reply is mirrored to CHAT (via turn_complete)
-              so the widget shows the agent's text; and it speaks the same answer via TTS.
+              so the widget shows the agent's text.
           Domain tools (search_help, check_service_status, create_ticket, connect_to_human)
           resolve the request; their answers flow back to the widget through the same topic.
-Pipeline: Cartesia ink-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, GOOGLE_API_KEY
+Pipeline: Google Gemini (LLM) — text-only over the CHAT pub/sub topic (no STT/TTS)
+Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY
 Run:      uv run use_case/support_chatbot.py
 """
 
 from dotenv import load_dotenv
 from zrt.plugins import GoogleLLM
-from zrt import Agent, Pipeline, Room, function_tool, PubSubPublishConfig, EOUConfig, InterruptConfig
+from zrt import Agent, Pipeline, Room, function_tool, PubSubPublishConfig
 import zrt
 import asyncio
 
 load_dotenv(override=True)
 
-AGENT_ID = "support-chatbot-agent-py"
+AGENT_ID = "support-chatbot-agent"
 AGENT_NAME = "NimbusHelpdesk"
 CHAT_TOPIC = "CHAT"   # shared with the embed chat widget
 
@@ -42,8 +42,7 @@ class SupportChatbot(Agent):
             agent_id=AGENT_ID,
             instructions=(
                 "You are Nimbus's helpdesk assistant; Nimbus is a project-management SaaS. "
-                "Keep replies short, warm, and plain-text (this is shown in a chat widget and "
-                "read aloud). Answer how-to questions by calling search_help with the topic. "
+                "Keep replies short, warm, and plain-text (this is shown in a chat widget). Answer how-to questions by calling search_help with the topic. "
                 "If a visitor reports an outage or things being down, call check_service_status. "
                 "If you cannot resolve their problem, call create_ticket with a clear summary and "
                 "a priority (low, medium, or high). If they're frustrated or ask for a person, "

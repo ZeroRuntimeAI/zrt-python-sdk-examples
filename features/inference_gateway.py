@@ -1,23 +1,23 @@
 """
-18 · Inference Gateway turn detection: run turn-taking on Zero Runtime's gateway.
+Inference Gateway: run the entire pipeline on Zero Runtime's gateway.
 
-Feature:  Instead of a locally-configured detector, TurnDetector(model="echo-large")
-          from zrt.inference runs turn detection on the Zero Runtime Inference
-          Gateway. Drop it into the pipeline's turn_detector slot exactly like a plugin
-          detector; the gateway handles end-of-utterance classification.
-Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Inference-Gateway turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
+Feature:  Import STT/LLM/TTS and the turn detector from zrt.inference (not zrt.plugins).
+          Every provider then runs gateway-hosted over gRPC, and the gateway holds the
+          provider credentials, so no per-provider API keys are needed locally; only the
+          VAD stays local. Drop them into the pipeline exactly like plugin components.
+Pipeline: SarvamAI STT · Google Gemini LLM · Cartesia TTS · echo-large turn detector — all gateway-hosted · Silero VAD (local)
+Env:      ZRT_AUTH_TOKEN
 Run:      uv run features/inference_gateway.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
-from zrt.inference import DeepgramSTT, CartesiaTTS, GoogleLLM, TurnDetector, SarvamAISTT
+from zrt.inference import CartesiaTTS, GoogleLLM, SarvamAISTT, TurnDetector
 from zrt.plugins import SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "inference-gateway-agent-py18"
+AGENT_ID = "inference-gateway-agent"
 
 
 class Assistant(Agent):
@@ -63,7 +63,7 @@ def build_pipeline() -> Pipeline:
 
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=False))
+    zrt.invoke(AGENT_ID, room=Room(playground=True))
 
 
 if __name__ == "__main__":

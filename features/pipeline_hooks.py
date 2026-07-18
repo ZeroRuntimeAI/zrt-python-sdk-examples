@@ -1,3 +1,12 @@
+"""
+Pipeline hooks: observe turn / STT / LLM / TTS events with @pipeline.on(...).
+
+Feature:  Register @pipeline.on(...) hooks to observe and shape the pipeline: inspect turns,
+          transcripts and LLM output as they flow through.
+Pipeline: Cartesia ink-2 (STT) · Groq llama-3.3-70b (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, GROQ_API_KEY
+Run:      uv run features/pipeline_hooks.py
+"""
 import logging
 import re
 from datetime import datetime

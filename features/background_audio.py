@@ -1,12 +1,13 @@
 """
-06 · Background audio: ambient music mixed under the conversation.
+Background audio: ambient music mixed under the conversation.
 
-Feature:  Play a looping ambient track (office-noise.mp3, bundled next to this file)
-          underneath the agent's voice. The user can start/stop it via function tools.
+Feature:  Play a looping ambient track (bg-noise-1.wav, streamed from the Zero Runtime
+          CDN) underneath the agent's voice. The user can start/stop it via function tools.
           Needs serve(background_audio=True) so the worker session enables the mixer.
-Pipeline: Google (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_API_KEY, CARTESIA_API_KEY
-          that shares the host filesystem; use an http(s) URL for a hosted runtime.
+Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
+Note:     AUDIO_FILE points at a hosted https URL so any runtime can fetch it; to use a
+          local file instead, set a filesystem path (the runtime must then share it).
 Run:      uv run features/background_audio.py
 """
 import zrt
@@ -16,9 +17,9 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "background-audio-agent-py06"
+AGENT_ID = "background-audio-agent"
 
-AUDIO_FILE = "http://cdn.zeroruntime.ai/zrt/bg-audio/bg-noise-1.wav"
+AUDIO_FILE = "https://cdn.zeroruntime.ai/zrt/bg-audio/bg-noise-1.wav"
 
 
 class Assistant(Agent):
