@@ -10,7 +10,7 @@ interruptions) for you.
 ```bash
 ./setup.sh                  # installs deps (uv or pip) and seeds .env
 # edit .env: set ZRT_AUTH_TOKEN + the provider keys your example uses
-uv run <name>.py   # or: source .venv/bin/activate && python <name>.py
+uv run features/basic_cascade.py   # or: source .venv/bin/activate && python features/basic_cascade.py
 ```
 
 That's it; no media servers, GPUs, or provider client libraries to install. The
@@ -45,6 +45,7 @@ pipeline hooks.
 | `hybrid_stt.py`             | Cascade STT feeding a realtime LLM (`mode="hybrid_stt"`)                                     |
 | `hybrid_tts.py`             | Realtime LLM with cascade TTS voice (`mode="hybrid_tts"`)                                    |
 | `vision.py`                 | Camera frame capture + analysis                                                              |
+| `avatar_agent.py`           | Video avatar (Anam) lip-syncing the TTS output                                               |
 | `mcp_tools.py`              | Tools auto-discovered from MCP servers                                                       |
 | `agent_handoff.py`          | `agent_switch()` between specialist agents                                                   |
 | `change_component.py`       | Swap one pipeline component (STT/TTS) mid-call                                               |
@@ -56,7 +57,7 @@ pipeline hooks.
 | `pronunciation.py`          | `stt_word_substitutions` + filler filtering                                                  |
 | `pubsub.py`                 | Room pub/sub chat; mirror replies to a `CHAT` topic (`publish_message` / `subscribe_pubsub`) |
 | `wakeup_call.py`            | Re-engage a silent caller via `on_wake_up()`                                                 |
-| `inference_gateway.py`      | Gateway turn detection (`TurnDetector(model="echo-large")`)                                  |
+| `inference_gateway.py`      | Whole pipeline on the inference gateway (STT/LLM/TTS + turn detection)                       |
 | `chat_context.py`           | `ContextWindow` budget + `get_context_history()` recap                                       |
 
 ### `use_case/`
@@ -71,7 +72,7 @@ pipeline hooks.
 | `drive_through.py`          | Fast-food order capture (snappy turn-taking)      |
 | `language_tutor.py`         | Realtime Spanish conversation tutor               |
 | `proactive_outreach.py`     | Outbound renewal call with wake-up                |
-| `support_chatbot.py`        | Text + voice helpdesk over a `CHAT` pub/sub topic |
+| `support_chatbot.py`        | Text-only helpdesk over a `CHAT` pub/sub topic     |
 
 ## How it works
 
