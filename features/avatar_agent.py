@@ -1,20 +1,20 @@
 """
-Advanced cascade config: explicit model picks + false-interruption handling.
+Avatar agent: drive a video avatar alongside the voice pipeline.
 
-Feature:  A fully-specified cascade (explicit STT/LLM/TTS models) plus InterruptConfig to
-          tune barge-in / false-interruption behaviour.
-Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
-Run:      uv run features/advance_cascade_config.py
+Feature:  Add an Anam video avatar to a standard cascade; it lip-syncs the agent's TTS
+          output for a face-to-face experience.
+Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Anam avatar · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY, ANAM_API_KEY, ANAM_AVATAR_ID
+Run:      uv run features/avatar_agent.py
 """
 import zrt
-from zrt import Agent, InterruptConfig, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
+from zrt import Agent, Pipeline, Room, function_tool
+from zrt.plugins import AnamAvatar, CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "advance-cascade-config-agent"
+AGENT_ID = "avatar-agent"
 
 
 class Assistant(Agent):
@@ -42,35 +42,25 @@ class Assistant(Agent):
         Args:
             city: Name of the city to look up.
         """
+        # Replace with a real weather API call in production.
         return {"city": city, "temperature_c": 28, "condition": "Sunny", "humidity": 55}
 
 
 def build_pipeline() -> Pipeline:
     """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
     return Pipeline(
-        stt=DeepgramSTT(model="nova-2-conversationalai"),
+        stt=DeepgramSTT(),
         llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
         tts=CartesiaTTS(model="sonic-3.5"),
         vad=SileroVAD(),
         turn_detector=TurnDetector(model="echo-large"),
-        interrupt_config=InterruptConfig(
-            mode="HYBRID",
-            interrupt_min_duration=0.5,
-            interrupt_min_words=2,
-            interrupt_min_confidence=0.0,
-            false_interrupt_pause_duration=2.0,
-            resume_on_false_interrupt=True,
-            false_interrupt_pause_duration_ms=2000,
-            interrupt_fade_duration=0.0,
-            interrupt_fade_duration_ms=400,
-        ),
+        avatar=AnamAvatar(),
     )
 
 
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""
     zrt.invoke(AGENT_ID, room=Room(playground=True))
-
 
 if __name__ == "__main__":
     zrt.serve(Assistant, on_ready=invoke_agent)

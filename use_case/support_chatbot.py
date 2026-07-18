@@ -23,7 +23,7 @@ import asyncio
 
 load_dotenv(override=True)
 
-AGENT_ID = "support-chatbot-agent-py"
+AGENT_ID = "support-chatbot-agent"
 AGENT_NAME = "NimbusHelpdesk"
 CHAT_TOPIC = "CHAT"   # shared with the embed chat widget
 

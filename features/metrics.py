@@ -1,5 +1,5 @@
 """
-12 · Metrics: observe STT/LLM/TTS/EOU metric hooks.
+Metrics: observe STT/LLM/TTS/EOU metric hooks.
 
 Feature:  Subscribe to per-stage metric hooks and log them. zrt exposes metric
           HOOKS only; the collector/export pipeline is runtime-side.
@@ -14,7 +14,7 @@ from zrt.plugins import CartesiaSTT, CartesiaTTS, GroqLLM, SileroVAD, TurnDetect
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "metrics-agent-py12"
+AGENT_ID = "metrics-agent"
 
 
 class Assistant(Agent):

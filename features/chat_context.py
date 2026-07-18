@@ -1,5 +1,5 @@
 """
-19 · Chat context: manage the conversation window and read the history back.
+Chat context: manage the conversation window and read the history back.
 
 Feature:  Two chat-context tools the SDK exposes:
             - ContextWindow on the Pipeline: the runtime keeps the prompt within a token
@@ -19,7 +19,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, OpenAILLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "chat-context-agent-py19"
+AGENT_ID = "chat-context-agent"
 
 
 class Assistant(Agent):

@@ -1,3 +1,12 @@
+"""
+Hybrid TTS: a realtime LLM rendered through a cascade TTS voice.
+
+Feature:  Use a realtime model for reasoning but synthesize speech through a dedicated TTS
+          provider (Cartesia) for full control over the voice (mode="hybrid_tts").
+Pipeline: Gemini Realtime (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY, CARTESIA_API_KEY
+Run:      uv run features/hybrid_tts.py
+"""
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
 from zrt.plugins import CartesiaTTS, GeminiLiveConfig, GeminiRealtime, SileroVAD, TurnDetector
@@ -5,7 +14,7 @@ from zrt.plugins import CartesiaTTS, GeminiLiveConfig, GeminiRealtime, SileroVAD
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "hybrid-tts-agent-py11"
+AGENT_ID = "hybrid-tts-agent"
 
 
 class Assistant(Agent):

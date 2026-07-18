@@ -23,7 +23,7 @@ def _ist_now() -> str:
     return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%A, %d %B %Y, %I:%M %p")
 
 
-TRIAGE_AGENT_ID = "triage-agent-py"
+TRIAGE_AGENT_ID = "medical-triage-agent"
 CARDIOLOGY_AGENT_ID = "cardiology-agent"
 GENERAL_MEDICINE_AGENT_ID = "general-medicine-agent"
 WORD_SUBSTITUTIONS = {

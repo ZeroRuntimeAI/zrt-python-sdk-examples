@@ -1,5 +1,5 @@
 """
-17 · Wake-up call: re-engage a caller who has gone silent.
+Wake-up call: re-engage a caller who has gone silent.
 
 Feature:  Pipeline(wake_up=<seconds>) arms a silence timer. If the caller stops
           speaking for that long, the runtime calls the agent's on_wake_up() hook, which
@@ -15,7 +15,7 @@ from zrt.plugins import CartesiaSTT, OpenAILLM, SarvamAITTS, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "wakeup-agent-py17"
+AGENT_ID = "wakeup-call-agent"
 
 
 class PatientAgent(Agent):

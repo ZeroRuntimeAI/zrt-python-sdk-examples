@@ -1,3 +1,12 @@
+"""
+Change component: swap a single pipeline component (STT/TTS) mid-call.
+
+Feature:  Replace one slot of a running pipeline (e.g. switch STT/TTS provider or language)
+          without tearing down the session.
+Pipeline: Deepgram / SarvamAI (STT) · Google Gemini (LLM) · Cartesia / SarvamAI (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY, SARVAM_API_KEY
+Run:      uv run features/change_component.py
+"""
 from __future__ import annotations
 
 import logging
@@ -14,7 +23,7 @@ logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"),
                     format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("component-swap")
 
-AGENT_ID = "component-swap-agent-py"
+AGENT_ID = "change-component-agent"
 
 LANGUAGES = {
     "en": {

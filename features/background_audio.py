@@ -1,5 +1,5 @@
 """
-06 · Background audio: ambient music mixed under the conversation.
+Background audio: ambient music mixed under the conversation.
 
 Feature:  Play a looping ambient track (office-noise.mp3, bundled next to this file)
           underneath the agent's voice. The user can start/stop it via function tools.
@@ -16,7 +16,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "background-audio-agent-py06"
+AGENT_ID = "background-audio-agent"
 
 AUDIO_FILE = "http://cdn.zeroruntime.ai/zrt/bg-audio/bg-noise-1.wav"
 

@@ -22,7 +22,7 @@ def _ist_now() -> str:
     return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%A, %d %B %Y, %I:%M %p")
 
 
-AGENT_ID = "appointment-agent-py"
+AGENT_ID = "appointment-scheduling-agent"
 WORD_SUBSTITUTIONS = {
     "Dr.": "Doctor",
     "APT-10432": "A P T dash one zero four three two"

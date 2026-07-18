@@ -1,5 +1,5 @@
 """
-16 · Pub/Sub: broadcast the agent's replies to a room "CHAT" topic.
+Pub/Sub: broadcast the agent's replies to a room "CHAT" topic.
 
 Feature:  Room pub/sub; out-of-band text messaging alongside the voice stream.
             - session.publish_message(PubSubPublishConfig(topic=..., message=..., options=...)):
@@ -24,7 +24,7 @@ from zrt.plugins import GoogleLLM
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "pubsub-chat-agent-py16"
+AGENT_ID = "pubsub-agent"
 AGENT_NAME = "ChatAgent"
 CHAT_TOPIC = "CHAT"   # the room pub/sub topic this agent publishes + subscribes on
 

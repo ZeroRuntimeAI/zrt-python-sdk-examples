@@ -1,3 +1,12 @@
+"""
+DTMF & voicemail: telephony keypad input and answering-machine detection.
+
+Feature:  Handle keypad (DTMF) input via DTMFHandler (route on '0', validate a PIN) and
+          detect voicemail / answering machines with VoiceMailDetector.
+Pipeline: SarvamAI (STT) · Google Gemini (LLM) · Deepgram aura-2 (TTS) · Silero VAD · Namo turn detector
+Env:      ZRT_AUTH_TOKEN, SARVAM_API_KEY, GOOGLE_API_KEY, DEEPGRAM_API_KEY
+Run:      uv run features/dtmf_voicemail.py
+"""
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, DTMFHandler, VoiceMailDetector
 from zrt.plugins import DeepgramTTS, GoogleLLM, TurnDetector, SarvamAISTT, SileroVAD
@@ -5,7 +14,7 @@ from zrt.plugins import DeepgramTTS, GoogleLLM, TurnDetector, SarvamAISTT, Siler
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "dtmf_and_voice_mail_example"
+AGENT_ID = "dtmf-voicemail-agent"
 
 
 def to_agent(digit: str) -> None:

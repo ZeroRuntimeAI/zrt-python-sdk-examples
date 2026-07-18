@@ -1,5 +1,5 @@
 """
-05 · Fallback chains: automatic provider failover for STT, LLM, and TTS.
+Fallback chains: automatic provider failover for STT, LLM, and TTS.
 
 Feature:  Each slot is a Fallback wrapper over a list of providers. If the primary
           provider errors out or exceeds its latency budget, the pipeline transparently
@@ -21,7 +21,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "fallback-agent-py05"
+AGENT_ID = "fallback-agent"
 
 # Fallback configuration:
 # 1. Define a list of providers (in priority order).

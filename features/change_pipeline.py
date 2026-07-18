@@ -1,3 +1,12 @@
+"""
+Change pipeline: switch the whole pipeline (cascade <-> realtime) at runtime.
+
+Feature:  Swap the entire pipeline mid-session, from a cascade (STT/LLM/TTS) to a realtime
+          speech-to-speech model and back. SWITCH_AFTER_SECONDS controls the timing.
+Pipeline: Cascade: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS)  <->  Gemini Realtime (speech-to-speech)
+Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
+Run:      uv run features/change_pipeline.py
+"""
 import asyncio
 import logging
 import os
@@ -13,7 +22,7 @@ logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"),
                     format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("switch-cascade-realtime")
 
-AGENT_ID = "switch-cascade-realtime-py"
+AGENT_ID = "change-pipeline-agent"
 SWITCH_AFTER = float(os.environ.get("SWITCH_AFTER_SECONDS", "10"))
 
 

@@ -1,5 +1,5 @@
 """
-07 · Realtime: full speech-to-speech with a single realtime model.
+Realtime: full speech-to-speech with a single realtime model.
 
 Feature:  Use a native realtime model in the LLM slot for low-latency, end-to-end
           speech-to-speech. No separate STT/TTS/VAD/turn-detector; the model handles
@@ -15,7 +15,7 @@ from zrt.plugins import GeminiLiveConfig, GeminiRealtime
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "realtime-agent-py07"
+AGENT_ID = "realtime-agent"
 
 
 class Assistant(Agent):

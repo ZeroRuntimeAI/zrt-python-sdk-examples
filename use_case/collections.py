@@ -27,7 +27,7 @@ def _ist_now() -> str:
     return datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%A, %d %B %Y, %I:%M %p")
 
 
-AGENT_ID = "collections-agent-py"
+AGENT_ID = "collections-agent"
 
 
 def build_pipeline() -> Pipeline:

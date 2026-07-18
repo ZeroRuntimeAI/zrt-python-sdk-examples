@@ -1,5 +1,5 @@
 """
-13 · Multilingual: detect and reply in the user's language.
+Multilingual: detect and reply in the user's language.
 
 Feature:  Deepgram multi-language STT + language-mirroring instructions. A
           user_turn_start hook logs each utterance.
@@ -14,7 +14,7 @@ from zrt.plugins import GoogleLLM, SarvamAISTT, SarvamAITTS, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "multilingual-agent-py13"
+AGENT_ID = "multilingual-agent"
 
 
 class Assistant(Agent):

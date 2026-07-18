@@ -17,7 +17,7 @@ from zrt.plugins import SileroVAD
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "inference-gateway-agent-py18"
+AGENT_ID = "inference-gateway-agent"
 
 
 class Assistant(Agent):
