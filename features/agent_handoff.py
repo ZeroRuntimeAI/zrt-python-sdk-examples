@@ -14,7 +14,7 @@ from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDete
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "agent-handoff-agent"
+AGENT_ID = "handoff-agent"
 BILLING_AGENT_ID = "billing-agent"
 SUPPORT_AGENT_ID = "support-agent"
 
