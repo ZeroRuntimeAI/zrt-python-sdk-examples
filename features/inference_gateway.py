@@ -63,7 +63,7 @@ def build_pipeline() -> Pipeline:
 
 def invoke_agent() -> None:
     """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=False))
+    zrt.invoke(AGENT_ID, room=Room(playground=True))
 
 
 if __name__ == "__main__":

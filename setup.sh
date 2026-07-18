@@ -42,8 +42,8 @@ else
   log "upgrading pip"
   python -m pip install --quiet --upgrade pip
 
-  log "installing zrt==0.1.0"
-  pip install --quiet "zrt==0.1.0"
+  log "installing zrt"
+  pip install --quiet "zrt"
 
   log "installing example dependencies"
   pip install --quiet "python-dotenv>=1.0"
