@@ -17,7 +17,7 @@ Run:      uv run use_case/support_chatbot.py
 
 from dotenv import load_dotenv
 from zrt.plugins import GoogleLLM
-from zrt import Agent, Pipeline, Room, function_tool, PubSubPublishConfig, EOUConfig, InterruptConfig
+from zrt import Agent, Pipeline, Room, function_tool, PubSubPublishConfig
 import zrt
 import asyncio
 

@@ -10,7 +10,7 @@ Run:      uv run features/wakeup_call.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaSTT, OpenAILLM, SarvamAITTS, SileroVAD, TurnDetector, DeepgramTTS
+from zrt.plugins import CartesiaSTT, OpenAILLM, SileroVAD, TurnDetector, DeepgramTTS
 
 from dotenv import load_dotenv
 load_dotenv(override=True)

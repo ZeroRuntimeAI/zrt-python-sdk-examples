@@ -15,8 +15,7 @@ Run:      uv run features/fallback.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool, FallbackSTT, FallbackLLM, FallbackTTS
-from zrt.plugins import CartesiaTTS, DeepgramSTT, DeepgramTTS, GoogleLLM, OpenAILLM, SarvamAISTT, SileroVAD, TurnDetector, OpenAISTT, OpenAITTS
-import asyncio
+from zrt.plugins import CartesiaTTS, DeepgramSTT, DeepgramTTS, GoogleLLM, OpenAILLM, SileroVAD, TurnDetector, OpenAISTT
 
 from dotenv import load_dotenv
 load_dotenv(override=True)

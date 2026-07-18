@@ -11,7 +11,7 @@ Run:      uv run features/inference_gateway.py
 """
 import zrt
 from zrt import Agent, Pipeline, Room, function_tool
-from zrt.inference import DeepgramSTT, CartesiaTTS, GoogleLLM, TurnDetector, SarvamAISTT
+from zrt.inference import CartesiaTTS, GoogleLLM, SarvamAISTT, TurnDetector
 from zrt.plugins import SileroVAD
 
 from dotenv import load_dotenv
