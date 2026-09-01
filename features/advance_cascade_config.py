@@ -1,76 +1,65 @@
-"""
-Advanced cascade config: explicit model picks + false-interruption handling.
+# Tuning the handoff between caller and agent on a cascade pipeline: EOU config
+# decides when the caller has finished speaking, interruption config decides
+# when a barge-in stops the agent. Also shows an uninterruptible utterance.
 
-Feature:  A fully-specified cascade (explicit STT/LLM/TTS models) plus InterruptConfig to
-          tune barge-in / false-interruption behaviour.
-Pipeline: Deepgram nova-2 (STT) · Google Gemini (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
-Run:      uv run features/advance_cascade_config.py
-"""
-import zrt
-from zrt import Agent, InterruptConfig, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
+import os
+
+import zeroruntime
+from zeroruntime import Agent, EOUConfig, InterruptConfig, Pipeline, Room
+from zeroruntime.inference import TurnDetector
+from zeroruntime.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "advance-cascade-config-agent"
 
 
-class Assistant(Agent):
+AGENT_ID = os.getenv("AGENT_ID", "cascade-advanced")
+
+
+class VoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="Assistant",
-            agent_id=AGENT_ID,
             instructions=(
-                "You are a friendly voice assistant. Keep replies short and natural. "
-                "When asked about the weather, call the get_weather tool."
+                "You are a helpful voice assistant that can answer questions and "
+                "help with tasks."
             ),
-            pipeline=build_pipeline(),
+            agent_id=AGENT_ID,
+            pipeline=Pipeline(
+                stt=DeepgramSTT(),
+                llm=GoogleLLM(),
+                tts=CartesiaTTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
+                eou=EOUConfig(
+                    mode="ADAPTIVE",
+                    min_max_speech_wait_timeout=[0.5, 0.8],
+                ),
+                interrupt=InterruptConfig(
+                    mode="HYBRID",
+                    interrupt_min_duration=0.2,
+                    interrupt_min_words=2,
+                    false_interrupt_pause_duration=2.0,
+                    resume_on_false_interrupt=True,
+                ),
+            ),
         )
 
     async def on_enter(self) -> None:
-        await self.session.say("Hi! I'm your assistant. Ask me about the weather in any city.")
+        await self.session.say(
+            "This example script showcases advanced cascade features, including "
+            "interruptible speech. This message cannot be interrupted.",
+            interruptible=False,
+        )
 
     async def on_exit(self) -> None:
-        await self.session.say("Thanks for calling. Goodbye!")
-
-    @function_tool
-    async def get_weather(self, city: str) -> dict:
-        """Get the current weather for a city.
-
-        Args:
-            city: Name of the city to look up.
-        """
-        return {"city": city, "temperature_c": 28, "condition": "Sunny", "humidity": 55}
+        await self.session.say("Goodbye!")
 
 
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        stt=DeepgramSTT(model="nova-2-conversationalai"),
-        llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-        tts=CartesiaTTS(model="sonic-3.5"),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
-        interrupt_config=InterruptConfig(
-            mode="HYBRID",
-            interrupt_min_duration=0.5,
-            interrupt_min_words=2,
-            interrupt_min_confidence=0.0,
-            false_interrupt_pause_duration=2.0,
-            resume_on_false_interrupt=True,
-            false_interrupt_pause_duration_ms=2000,
-            interrupt_fade_duration=0.0,
-            interrupt_fade_duration_ms=400,
-        ),
-    )
-
-
-def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
+def on_ready() -> None:
+    zeroruntime.invoke(AGENT_ID, room=Room(
+        name="Cascade Advanced", playground=True))
 
 
 if __name__ == "__main__":
-    zrt.serve(Assistant, on_ready=invoke_agent)
+    zeroruntime.serve(VoiceAgent, on_ready=on_ready)

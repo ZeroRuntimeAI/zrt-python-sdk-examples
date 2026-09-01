@@ -1,94 +1,54 @@
-"""
-DTMF & voicemail: telephony keypad input and answering-machine detection.
+# Keypad input and answering-machine detection, both declared on the pipeline
+# alongside the providers, with their callbacks as agent methods.
 
-Feature:  Handle keypad (DTMF) input via DTMFHandler (route on '0', validate a PIN) and
-          detect voicemail / answering machines with VoiceMailDetector.
-Pipeline: SarvamAI (STT) · Google Gemini (LLM) · Deepgram aura-2 (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, SARVAM_API_KEY, GOOGLE_API_KEY, DEEPGRAM_API_KEY
-Run:      uv run features/dtmf_voicemail.py
-"""
-import zrt
-from zrt import Agent, Pipeline, Room, function_tool, DTMFHandler, VoiceMailDetector
-from zrt.plugins import DeepgramTTS, GoogleLLM, TurnDetector, SarvamAISTT, SileroVAD
+import zeroruntime
+from zeroruntime import Agent, DTMFHandler, Pipeline, Room, VoiceMailDetector
+from zeroruntime.inference import TurnDetector
+from zeroruntime.plugins import DeepgramSTT, ElevenLabsTTS, OpenAILLM, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
+
 AGENT_ID = "dtmf-voicemail-agent"
 
 
-def to_agent(digit: str) -> None:
-    """DTMF callback: caller pressed 0 to reach a human agent."""
-    print(f"[dtmf] digit {digit} pressed -> routing to a human agent")
-
-
-def pin_ok(sequence: str) -> None:
-    """DTMF callback: caller entered the correct PIN sequence."""
-    print(f"[dtmf] PIN sequence {sequence} accepted")
-
-
-def on_voicemail(info: dict) -> None:
-    """VoiceMailDetector callback: answering machine detected."""
-    print(f"[voicemail] detected: {info}")
-
-
-class Assistant(Agent):
+class VoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="Assistant",
             agent_id=AGENT_ID,
-            instructions=(
-                "You are a phone assistant. Ask the caller to press 0 for an agent or "
-                "enter their 4-digit PIN. Use check_account to verify their PIN."
+            instructions="You are a helpful voice assistant that can answer questions.",
+            pipeline=Pipeline(
+                stt=DeepgramSTT(),
+                llm=OpenAILLM(),
+                tts=ElevenLabsTTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
+                dtmf_handler=DTMFHandler(),
+                voice_mail_detector=VoiceMailDetector(llm=OpenAILLM()),
             ),
-            pipeline=build_pipeline(),
         )
 
     async def on_enter(self) -> None:
-        await self.session.say("Press 0 for an agent, or enter your 4-digit PIN.")
+        await self.session.say("Hello, how can I help you today?")
 
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
 
-    @function_tool
-    async def check_account(self, pin: str) -> dict:
-        """Verify a caller's account using their PIN.
+    async def on_dtmf(self, key: str, payload: dict) -> None:
+        """One keypress. Fire and forget -- nothing in the pipeline waits."""
+        print("DTMF message received:", key, payload)
 
-        Args:
-            pin: The 4-digit PIN the caller entered.
-        """
-        # Replace with a real account-verification call in production.
-        return {"pin": pin, "verified": True, "account_id": "ACC-7781"}
-
-
-dtmf_handler = DTMFHandler()
-dtmf_handler.on_digit("0", to_agent)
-dtmf_handler.on_sequence("1234", pin_ok)
-
-voice_mail_detector = VoiceMailDetector(
-    llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-    callback=on_voicemail,
-    auto_hangup=True,
-)
-
-
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        stt=SarvamAISTT(),
-        llm=GoogleLLM(model="gemini-2.5-flash", thinking_budget=0),
-        tts=DeepgramTTS(model="aura-2-andromeda-en", stream=True),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
-        dtmf_handler=dtmf_handler,
-        voice_mail_detector=voice_mail_detector,
-    )
+    async def on_voicemail(self) -> None:
+        """Awaited, so anything said here finishes before the call ends."""
+        print("Voice Mail detected, Shutting down the agent")
+        await self.hangup(reason="reached voicemail")
 
 
 def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
+    zeroruntime.invoke(AGENT_ID, room=Room(
+        name="DTMF Voicemail", playground=True))
 
 
 if __name__ == "__main__":
-    zrt.serve(Assistant, on_ready=invoke_agent)
+    zeroruntime.serve(VoiceAgent, on_ready=invoke_agent)

@@ -1,19 +1,18 @@
-# Speech to speech with one model doing all of it -- the counterpart to
-# basic_cascade.py. Filling the realtime slot is what makes it a realtime
-# pipeline; the mode is inferred from the components, never declared.
+# A realtime model reached through the ZeroRuntime gateway, with no vendor key --
+# the realtime counterpart to inference_gateway.py. The gateway class flattens
+# the arguments the direct plugin nests; they are not the same class.
 
 import os
 
 import zeroruntime
 from zeroruntime import Agent, Pipeline, Room
-from zeroruntime.plugins import GeminiRealtime
-
+from zeroruntime.inference import GeminiRealtime
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
 
-AGENT_ID = os.getenv("AGENT_ID", "realtime-basicff")
+AGENT_ID = os.getenv("AGENT_ID", "zeroruntime-realtime-inference-agent")
 
 
 class MyVoiceAgent(Agent):
@@ -26,11 +25,11 @@ class MyVoiceAgent(Agent):
             agent_id=AGENT_ID,
             pipeline=Pipeline(
                 realtime=GeminiRealtime(
-                    model="gemini-3.1-flash-live-preview",
-                    config={
-                        "voice": "Leda",
-                        "response_modalities": ["AUDIO"],
-                    },
+                    model="gemini-2.5-flash-native-audio-preview-12-2025",
+                    voice="Puck",
+                    language_code="en-US",
+                    response_modalities=["AUDIO"],
+                    temperature=0.7,
                 ),
             ),
         )
@@ -43,8 +42,11 @@ class MyVoiceAgent(Agent):
 
 
 def on_ready() -> None:
-    zeroruntime.invoke(AGENT_ID, room=Room(
-        name="Realtime Basic", playground=True))
+    zeroruntime.invoke(
+        AGENT_ID, room=Room(
+            name="ZeroRuntime Realtime Inference", playground=True)
+    )
+
 
 if __name__ == "__main__":
     zeroruntime.serve(MyVoiceAgent, on_ready=on_ready)

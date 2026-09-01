@@ -1,14 +1,11 @@
-# Environment
-.env
 .venv/
 venv/
-
-# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-.pytest_cache/
-.DS_Store
 
-captured_frames/
 uv.lock
+
+.env
+.env.*
+
+.DS_Store
