@@ -1,22 +1,23 @@
-# Speech to speech with one model doing all of it -- the counterpart to
-# basic_cascade.py. Filling the realtime slot is what makes it a realtime
-# pipeline; the mode is inferred from the components, never declared.
+# Voice in, voice out -- the full cascade shape, and the map for the other three
+# composable pipelines. Which slots you fill decides what the agent can do; the
+# mode is inferred from them, never declared.
 
 import os
 
 import zeroruntime
 from zeroruntime import Agent, Pipeline, Room
-from zeroruntime.plugins import GeminiRealtime
+from zeroruntime.inference import TurnDetector
+from zeroruntime.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
 
-AGENT_ID = os.getenv("AGENT_ID", "realtime-basicff")
+AGENT_ID = os.getenv("AGENT_ID", "multimodal-agent")
 
 
-class MyVoiceAgent(Agent):
+class MultimodalAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
             instructions=(
@@ -25,13 +26,11 @@ class MyVoiceAgent(Agent):
             ),
             agent_id=AGENT_ID,
             pipeline=Pipeline(
-                realtime=GeminiRealtime(
-                    model="gemini-3.1-flash-live-preview",
-                    config={
-                        "voice": "Leda",
-                        "response_modalities": ["AUDIO"],
-                    },
-                ),
+                stt=DeepgramSTT(),
+                llm=GoogleLLM(),
+                tts=CartesiaTTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
             ),
         )
 
@@ -44,7 +43,8 @@ class MyVoiceAgent(Agent):
 
 def on_ready() -> None:
     zeroruntime.invoke(AGENT_ID, room=Room(
-        name="Realtime Basic", playground=True))
+        name="Multimodal Agent", playground=True))
+
 
 if __name__ == "__main__":
-    zeroruntime.serve(MyVoiceAgent, on_ready=on_ready)
+    zeroruntime.serve(MultimodalAgent, on_ready=on_ready)

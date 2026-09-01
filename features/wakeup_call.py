@@ -1,76 +1,50 @@
-"""
-Wake-up call: re-engage a caller who has gone silent.
+# Nudging a caller who has gone quiet: a wake_up timer on the agent, with the
+# callback as a method so the handler travels with the agent that owns it.
 
-Feature:  Pipeline(wake_up=<seconds>) arms a silence timer. If the caller stops
-          speaking for that long, the runtime calls the agent's on_wake_up() hook, which
-          nudges them. wake_up_max_attempts caps how many nudges before the call ends.
-Pipeline: Cartesia (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, CARTESIA_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
-Run:      uv run features/wakeup_call.py
-"""
-import zrt
-from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaSTT, OpenAILLM, SileroVAD, TurnDetector, DeepgramTTS
+import zeroruntime
+from zeroruntime import Agent, Pipeline, Room
+from zeroruntime.inference import TurnDetector
+from zeroruntime.plugins import AnthropicLLM, DeepgramSTT, GoogleTTS, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
+
 AGENT_ID = "wakeup-call-agent"
 
 
-class PatientAgent(Agent):
+class VoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="PatientAgent",
             agent_id=AGENT_ID,
             instructions=(
-                "You are a patient assistant. Answer questions and help the caller. If they go "
-                "quiet, you'll gently check in on them."
+                "You are a helpful voice assistant that can answer questions "
+                "and help with tasks and help with horoscopes and weather."
             ),
-            pipeline=build_pipeline(),
+            pipeline=Pipeline(
+                stt=DeepgramSTT(),
+                llm=AnthropicLLM(),
+                tts=GoogleTTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
+            ),
+            wake_up=15,
         )
-        self._nudges = 0
 
     async def on_enter(self) -> None:
-        await self.session.say("Hi! Take your time; I'm here whenever you're ready.")
+        await self.session.say("Hello, how can I help you today?")
 
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
 
     async def on_wake_up(self) -> None:
-        # Called by the runtime when the caller has been silent for `wake_up` seconds.
-        self._nudges += 1
-        await self.session.say("Are you still there? I'm happy to keep helping.")
-
-    @function_tool
-    async def get_help_topics(self) -> dict:
-        """List the topics this assistant can help with.
-
-        Args:
-            None.
-        """
-        # Replace with a real catalog in production.
-        return {"topics": ["account", "billing", "technical support"]}
-
-
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        stt=CartesiaSTT(model="ink-2"),
-        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                      reasoning_effort="none", verbosity="low"),
-        tts=DeepgramTTS(),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
-        wake_up=10,              # nudge after 10s of caller silence
-        wake_up_max_attempts=3,  # end the call after 3 nudges
-    )
+        await self.session.say("Hello, are you there?")
 
 
 def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
+    zeroruntime.invoke(AGENT_ID, room=Room(
+        name="Wakeup Call", playground=True))
 
 
 if __name__ == "__main__":
-    zrt.serve(PatientAgent, on_ready=invoke_agent)
+    zeroruntime.serve(VoiceAgent, on_ready=invoke_agent)

@@ -1,70 +1,60 @@
-"""
-Agent hangup: let the agent end the call itself.
+# The agent ends the call itself: an end_call function tool the model invokes
+# when the caller asks to hang up.
+import asyncio
 
-Feature:  A function tool calls session.hangup() so the agent can gracefully end the
-          call once its job is done (e.g. after confirming an order or saying goodbye).
-Pipeline: Google (STT) · OpenAI (LLM) · Deepgram (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, OPENAI_API_KEY, DEEPGRAM_API_KEY
-Run:      uv run features/agent_hangup.py
-"""
-import zrt
-from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import DeepgramTTS, GoogleSTT, OpenAILLM, SileroVAD, TurnDetector
+import zeroruntime
+from zeroruntime import Agent, Pipeline, Room, function_tool
+from zeroruntime.inference import TurnDetector
+from zeroruntime.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "hangup-agent"
+
+AGENT_ID = "agent-hangup"
 
 
-class Receptionist(Agent):
+class VoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="Receptionist",
             agent_id=AGENT_ID,
             instructions=(
-                "You are a brief reception line. Answer the caller's question, then ask if "
-                "there's anything else. When the caller says they're done (or says goodbye), "
-                "say a short farewell and call end_call to hang up. Do not hang up before saying goodbye."
+                "You are a helpful voice assistant that can answer questions. "
+                "When the user asks to hang up, end the call, or stop the "
+                "conversation, call the end_call function tool."
             ),
-            pipeline=build_pipeline(),
+            pipeline=Pipeline(
+                stt=DeepgramSTT(),
+                llm=GoogleLLM(),
+                tts=CartesiaTTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
+            ),
         )
 
     async def on_enter(self) -> None:
-        await self.session.say("Reception, how can I help?")
-
-    async def on_exit(self) -> None:
-        await self.session.say("Goodbye!")
+        await self.session.say("Hello, how can I help you today?")
 
     @function_tool
-    async def end_call(self, reason: str) -> dict:
-        """End the call once the caller is finished.
+    async def end_call(self) -> dict:
+        """End the call when the user asks to hang up or says goodbye."""
+        asyncio.create_task(self._announce_and_hangup())
+        return {"status": "ending_call"}
 
-        Args:
-            reason: Why the call is ending (e.g. "caller said goodbye").
-        """
-        handle = await self.session.say("Thanks for calling. Goodbye!")
+    async def _announce_and_hangup(self) -> None:
+        await self.session.interrupt()
+        await asyncio.sleep(1)
+        handle = await self.session.say(
+            "I am ending the call now.", interruptible=False
+        )
         await handle
-        await self.session.hangup(reason=reason)
-        return {"ended": True, "reason": reason}
-
-
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        stt=GoogleSTT(model="latest_long", location="global", stream=True),
-        llm=OpenAILLM(model="gpt-5.4-nano-2026-03-17", streaming=True,
-                      reasoning_effort="none", verbosity="low"),
-        tts=DeepgramTTS(model="aura-2-thalia-en", stream=True),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
-    )
+        await self.hangup(farewell="Goodbye!")
 
 
 def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
+    zeroruntime.invoke(AGENT_ID, room=Room(
+        name="Agent Hangup", playground=True))
 
 
 if __name__ == "__main__":
-    zrt.serve(Receptionist, on_ready=invoke_agent)
+    zeroruntime.serve(VoiceAgent, on_ready=invoke_agent)

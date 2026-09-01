@@ -1,89 +1,194 @@
-# Zero Runtime; Python SDK Examples
+# zeroruntime examples
 
-Runnable, real-time voice-agent examples built on the [Zero Runtime Python SDK](https://zeroruntime.ai/).
-You write the agent (instructions, tools, behavior); **Zero Runtime** runs the live
-speech-to-speech pipeline (STT → LLM → TTS, with turn detection, denoising, and
-interruptions) for you.
+Runnable examples for the [zeroruntime](https://zeroruntime.ai)
+Python SDK.
 
-## Quickstart
+Every file here is standalone. One file is one idea — a pipeline shape, a tool
+pattern, a piece of call control — and each opens with a comment explaining
+what it demonstrates and which detail is the point. Read the top of a file
+before running it; that comment is the documentation.
 
-```bash
-./setup.sh                  # installs deps (uv or pip) and seeds .env
-# edit .env: set ZRT_AUTH_TOKEN + the provider keys your example uses
-uv run features/basic_cascade.py   # or: source .venv/bin/activate && python features/basic_cascade.py
+## Layout
+
+```
+features/          the examples — pipeline shapes, speech, telephony, vision
+tools/             function tools, MCP servers, humans in the loop      *
+context/           what the agent remembers, and handing it to another  *
+observability/     hooks, events, tracing, recording                    *
+avatars/           giving the agent a face                              *
 ```
 
-That's it; no media servers, GPUs, or provider client libraries to install. The
-SDK plugins are thin config; the runtime does the heavy lifting in the cloud.
+`*` — some examples in these folders need an account, an extra package or a
+running service. Those folders carry their own README with the steps;
+everything in `features/` runs on the setup below.
 
-## Requirements
+## Setup
 
-- Python **3.11+**
-- A Zero Runtime endpoint + auth token (`ZRT_RUNTIME_ADDRESS`, `ZRT_AUTH_TOKEN`)
-- API key(s) for the providers your example uses (Deepgram, Google, Cartesia, …)
+```bash
+git clone https://github.com/ZeroRuntimeAI/zrt-python-sdk-examples
+cd zrt-python-sdk-examples
+```
 
-`setup.sh` prefers [`uv`](https://docs.astral.sh/uv/) for a fast install; if
-`uv` isn't present it falls back to `python -m venv` + `pip`.
+If you'd rather not pick a path below, `./setup.sh` takes either one for you:
+it prefers `uv`, falls back to `venv` + `pip`, and seeds `.env` from
+`.env.example`. It never overwrites an existing `.env`.
 
-## Examples
+### With uv
 
-Two folders: **`features/`** teaches one SDK capability at a time, **`use_case/`** ships
-production-shaped domain agents. Every example has real `@function_tool`s and lifecycle /
-pipeline hooks.
+```bash
+uv sync
+```
 
-### `features/`
+That creates `.venv` and installs everything. Run an example without
+activating anything:
 
-| File                        | Shows                                                                                        |
-| --------------------------- | -------------------------------------------------------------------------------------------- |
-| `basic_cascade.py`          | Smallest complete agent; STT→LLM→TTS + one tool                                              |
-| `advance_cascade_config.py` | FalseInterruption Handling cascade; model picks + `InterruptConfig`                          |
-| `function_tools.py`         | Multiple tools the LLM chains together                                                       |
-| `pipeline_hooks.py`         | `@pipeline.on(...)` turn / llm observation hooks                                             |
-| `fallback.py`               | `FallbackSTT/LLM/TTS` provider failover                                                      |
-| `background_audio.py`       | Ambient music + thinking audio                                                               |
-| `realtime.py`               | Full speech-to-speech (Gemini Live)                                                          |
-| `hybrid_stt.py`             | Cascade STT feeding a realtime LLM (`mode="hybrid_stt"`)                                     |
-| `hybrid_tts.py`             | Realtime LLM with cascade TTS voice (`mode="hybrid_tts"`)                                    |
-| `vision.py`                 | Camera frame capture + analysis                                                              |
-| `avatar_agent.py`           | Video avatar (Anam) lip-syncing the TTS output                                               |
-| `mcp_tools.py`              | Tools auto-discovered from MCP servers                                                       |
-| `agent_handoff.py`          | `agent_switch()` between specialist agents                                                   |
-| `change_component.py`       | Swap one pipeline component (STT/TTS) mid-call                                               |
-| `change_pipeline.py`        | Switch the whole pipeline cascade ↔ realtime at runtime                                      |
-| `metrics.py`                | Per-component latency via metric hooks                                                       |
-| `multilingual.py`           | Detect + reply in the caller's language                                                      |
-| `agent_hangup.py`           | Agent ends the call with `session.hangup()`                                                  |
-| `dtmf_voicemail.py`         | Keypad (DTMF) input + voicemail detection                                                    |
-| `pronunciation.py`          | `stt_word_substitutions` + filler filtering                                                  |
-| `pubsub.py`                 | Room pub/sub chat; mirror replies to a `CHAT` topic (`publish_message` / `subscribe_pubsub`) |
-| `wakeup_call.py`            | Re-engage a silent caller via `on_wake_up()`                                                 |
-| `inference_gateway.py`      | Whole pipeline on the inference gateway (STT/LLM/TTS + turn detection)                       |
-| `chat_context.py`           | `ContextWindow` budget + `get_context_history()` recap                                       |
+```bash
+uv run features/basic_cascade.py
+```
 
-### `use_case/`
+### With pip
 
-| File                        | Domain                                            |
-| --------------------------- | ------------------------------------------------- |
-| `appointment_scheduling.py` | Clinic; book · reschedule · cancel · remind       |
-| `lead_qualification.py`     | SaaS SDR; qualify → score → demo → route          |
-| `customer_support.py`       | E-commerce; orders · FAQ · tickets · callback     |
-| `collections.py`            | Compliance-first payment reminders                |
-| `medical_triage.py`         | Symptom triage + specialist handoff               |
-| `drive_through.py`          | Fast-food order capture (snappy turn-taking)      |
-| `language_tutor.py`         | Realtime Spanish conversation tutor               |
-| `proactive_outreach.py`     | Outbound renewal call with wake-up                |
-| `support_chatbot.py`        | Text-only helpdesk over a `CHAT` pub/sub topic     |
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install zeroruntime httpx
+```
 
-## How it works
+Either way you get one environment that runs every example in this repo.
 
-| Piece                                  | What it is                                                                                                                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Agent`                                | Your behavior; instructions, tools, what it says on enter/exit. Carries its `pipeline`.                                                                                               |
-| `Pipeline`                             | The voice stack: STT (hear) → LLM (think) → TTS (speak), plus VAD, turn detection, denoising. Also carries session helpers like `dtmf_handler`, `wake_up`, and `voice_mail_detector`. |
-| `zrt.serve(Agent, on_ready=...)`       | Registers the agent and listens for sessions.                                                                                                                                         |
-| `zrt.invoke(AGENT_ID, room=Room(...))` | Starts a session for a registered agent (returns a `playground_url`).                                                                                                                 |
+## Credentials
 
+Every example calls `load_dotenv()`, which searches upward from the file, so
+one `.env` at the repo root serves all of them:
 
-## License
+```bash
+ZERORUNTIME_AUTH_TOKEN=...
+```
 
-MIT — see [LICENSE](LICENSE).
+Then add a key per vendor the example's pipeline names. The full set across
+this repo, though no single example needs all of them:
+
+```bash
+DEEPGRAM_API_KEY=...      # DeepgramSTT
+CARTESIA_API_KEY=...      # CartesiaTTS
+ELEVENLABS_API_KEY=...    # ElevenLabsTTS
+GOOGLE_API_KEY=...        # GoogleLLM, GoogleTTS, GeminiRealtime
+OPENAI_API_KEY=...        # OpenAILLM, OpenAITTS
+ANTHROPIC_API_KEY=...     # AnthropicLLM
+SARVAMAI_API_KEY=...      # SarvamAISTT, SarvamAITTS
+SIMLI_API_KEY=...         # SimliAvatar
+ANAM_API_KEY=...          # AnamAvatar
+```
+
+Providers imported from `zeroruntime.inference` reach the gateway instead of the vendor,
+so they need `ZERORUNTIME_AUTH_TOKEN` and no vendor key at all — see
+`features/inference_gateway.py`. `SileroVAD` runs locally and needs nothing.
+
+## Running
+
+```bash
+uv run features/basic_cascade.py       # uv
+python features/basic_cascade.py       # pip, with .venv activated
+```
+
+The agent serves, joins a room, and prints a playground URL once on stdout.
+Open it and talk to the agent. Ctrl-C to stop.
+
+## The examples
+
+### Start here
+
+| File | What it shows |
+| --- | --- |
+| `features/basic_cascade.py` | The smallest complete agent: STT, LLM, TTS, VAD, turn detector |
+| `features/realtime.py` | The same call with one speech-to-speech model doing all of it |
+| `features/realtime_with_vad.py` | The same realtime call with VAD and denoise in front of the model |
+| `features/advance_cascade_config.py` | Tuning end-of-utterance and barge-in on a cascade pipeline |
+| `features/chat_agent.py` | Typing at the agent — room chat in, chat back out |
+
+### Pipeline shapes
+
+| File | What it shows |
+| --- | --- |
+| `features/agent_multimodal.py` | Voice in, voice out — the map for the other three |
+| `features/agent_llm.py` | Text in, text out |
+| `features/agent_text_to_voice.py` | Text in, voice out |
+| `features/agent_voice_to_text.py` | Voice in, text out |
+| `features/hybrid_stt.py` | Your transcriber in front of a realtime model |
+| `features/hybrid_tts.py` | A realtime model with your voice on the output |
+| `features/fallback.py` | A pipeline slot as a list — head serves, tail stands by |
+
+### ZeroRuntime inference
+
+| File | What it shows |
+| --- | --- |
+| `features/inference_gateway.py` | The same cascade through the gateway, one credential |
+| `features/zeroruntime_realtime.py` | A realtime model through the gateway, no vendor key |
+
+### Tools
+
+| File | What it shows |
+| --- | --- |
+| `tools/cascade_tool_chaining.py` | Three tools called in sequence, each fed by the last |
+| `tools/mcp_example.py` | Tools from an MCP server, connected in your process |
+| `tools/mcp_servers/current_time.py` | A small stdio MCP server for the above to talk to |
+| `tools/n8n_workflow/appointment_telephony.py` | An n8n workflow as the toolset, over HTTP |
+| `tools/human_in_the_loop/customer_agent.py` | A tool that waits on a person before answering |
+| `tools/human_in_the_loop/discord_mcp_server.py` | The Discord server that blocks behind it |
+
+### Conversation and context
+
+| File | What it shows |
+| --- | --- |
+| `context/agent_context_window.py` | Bounding a long call — summarise or truncate older turns |
+| `context/agent_memory.py` | Long-term memory across calls, searched and written per turn |
+| `context/handoffs/agent_sequential_handoff.py` | A tool that returns an Agent is the handoff |
+| `context/handoffs/cascade_to_realtime_handoff.py` | Swapping a live call onto a realtime model |
+| `context/handoffs/realtime_to_cascade_handoff.py` | And back again |
+| `context/multi_agent_switch.py` | One caller, three agents, handoff in either direction |
+| `context/persona_switch.py` | Five personas rebuilt live from a chat message |
+| `context/translator_agent.py` | Detect the caller's language mid-call and follow it |
+| `context/demo_multilang.py` | One agent in four languages, picked at startup |
+
+### Speech control
+
+| File | What it shows |
+| --- | --- |
+| `features/utterance_handle_agent.py` | Awaiting an utterance, and tools that notice interruption |
+| `features/reply_interrupt_agent.py` | say, reply and process_text — three different things |
+| `features/pronunciation.py` | Substitution rules applied between LLM and TTS |
+| `features/cached_tts.py` | Fixed phrases synthesised once and replayed as PCM |
+| `features/background_audio.py` | Ambience under the call, from the start or mid-call |
+| `features/wakeup_call.py` | Nudging a caller who has gone quiet |
+
+### Telephony
+
+| File | What it shows |
+| --- | --- |
+| `features/call_transfer.py` | Moving the caller to another number |
+| `features/warm_transfer.py` | Briefing a supervisor on hold, then bridging them in — needs a live SIP leg |
+| `features/dtmf_voicemail.py` | Keypad input and answering-machine detection |
+| `features/agent_hangup.py` | The agent ending the call itself |
+
+### Room and observability
+
+| File | What it shows |
+| --- | --- |
+| `observability/pipeline_events.py` | Component errors, recording state, latency metrics |
+| `observability/voice_pipeline_hooks.py` | The turn lifecycle of a cascade pipeline |
+| `observability/realtime_pipeline_hooks.py` | The same lifecycle on a realtime call |
+| `observability/observability_hooks.py` | OpenTelemetry, recording, and history on exit |
+
+### Vision
+
+| File | What it shows |
+| --- | --- |
+| `features/vision.py` | Showing the model what the camera sees |
+| `features/vision_realtime.py` | The same, on a speech-to-speech pipeline |
+
+### Avatars
+
+| File | What it shows |
+| --- | --- |
+| `avatars/avatar_simli_cascade.py` | Giving a cascade agent a face, with Simli |
+| `avatars/avatar_anam_cascade.py` | The same slot, with Anam and a function tool |

@@ -1,92 +1,91 @@
-"""
-Background audio: ambient music mixed under the conversation.
+# Two sounds under the call, both on the room's mixing track.
+#
+#   thinking audio    plays while the LLM is generating, automatically, every turn
+#   background audio  plays when you ask for it, and keeps playing until you stop
+#
+# Both need Room(background_audio=True). That flag is the track itself, not the
+# sound: without it the runtime has nowhere to put audio that is not speech, and
+# both calls below are declined. Neither plays by itself -- the Room opens the
+# track, these two put something on it.
 
-Feature:  Play a looping ambient track (bg-noise-1.wav, streamed from the Zero Runtime
-          CDN) underneath the agent's voice. The user can start/stop it via function tools.
-          Needs serve(background_audio=True) so the worker session enables the mixer.
-Pipeline: Deepgram (STT) · Google Gemini (LLM) · Cartesia (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, DEEPGRAM_API_KEY, GOOGLE_API_KEY, CARTESIA_API_KEY
-Note:     AUDIO_FILE points at a hosted https URL so any runtime can fetch it; to use a
-          local file instead, set a filesystem path (the runtime must then share it).
-Run:      uv run features/background_audio.py
-"""
-import zrt
-from zrt import Agent, Pipeline, Room, function_tool, BackgroundAudioHandlerConfig
-from zrt.plugins import CartesiaTTS, DeepgramSTT, GoogleLLM, SileroVAD, TurnDetector
+import os
+
+import zeroruntime
+from zeroruntime import Agent, Pipeline, Room, function_tool
+from zeroruntime.inference import TurnDetector,GoogleLLM,SarvamAITTS
+from zeroruntime.plugins import DeepgramSTT, SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "background-audio-agent"
 
-AUDIO_FILE = "https://cdn.zeroruntime.ai/zrt/bg-audio/bg-noise-1.wav"
+AGENT_ID = os.getenv("AGENT_ID", "background-audio-agent")
+
+#: Any file libav can decode -- wav, mp3, ogg, flac, m4a -- fetched by the
+#: runtime, so a URL it can reach rather than a path on this machine. Leave
+#: either unset to take the runtime's own default sound.
+MUSIC = os.getenv("BACKGROUND_MUSIC", "")
+THINKING = os.getenv("THINKING_AUDIO", "")
 
 
-class Assistant(Agent):
+class VoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="Assistant",
-            agent_id=AGENT_ID,
             instructions=(
-                "You are a calm, relaxing voice assistant with gentle background music. "
-                "Keep replies short. Use the start_music and stop_music tools when the "
-                "user asks to control the ambient track."
+                "You are a helpful voice assistant that can answer questions and "
+                "help with tasks. If the user asks to play music, use the "
+                "control_background_music tool with action 'play'. To stop, use "
+                "the action 'stop'."
             ),
-            pipeline=build_pipeline(),
+            agent_id=AGENT_ID,
+            pipeline=Pipeline(
+                stt=DeepgramSTT(),
+                llm=GoogleLLM(),
+                tts=SarvamAITTS(),
+                vad=SileroVAD(),
+                turn_detector=TurnDetector(),
+            ),
         )
 
     async def on_enter(self) -> None:
-        # Greet the caller, then start the ambient track underneath the conversation.
-        await self.session.say("Hi! I've got some calm music playing. Ask me to stop or start it anytime.")
-        await self.session.play_background_audio(
-            BackgroundAudioHandlerConfig(
-                file=AUDIO_FILE,
-                volume=0.2,
-                looping=True,
-                mode="mixing",
-            )
-        )
+        await self.session.set_thinking_audio(THINKING or None, volume=0.3)
+        await self.session.say("Hello, how can I help you today?")
 
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
 
     @function_tool
-    async def start_music(self) -> str:
-        """Start the looping ambient background music."""
-        # replace with real API in production
-        await self.session.play_background_audio(
-            BackgroundAudioHandlerConfig(
-                file=AUDIO_FILE,
-                volume=0.2,
+    async def control_background_music(self, action: str) -> str:
+        """Control the background music.
+
+        Args:
+            action: 'play' to start the music, 'stop' to end it.
+        """
+        if action.lower() == "play":
+            await self.session.play_background_audio(
+                MUSIC or None,
+                volume=0.8,
                 looping=True,
-                mode="mixing",
+                # False makes the music exclusive: the thinking sound is held
+                # back while it plays, rather than the two layering. True lets
+                # them overlap.
+                override_thinking=False,
             )
-        )
-        return "Background music started."
+            return "Background music started."
 
-    @function_tool
-    async def stop_music(self) -> str:
-        """Stop the ambient background music."""
-        # replace with real API in production
-        await self.session.stop_background_audio()
-        return "Background music stopped."
+        if action.lower() == "stop":
+            await self.session.stop_background_audio()
+            return "Background music stopped."
+
+        return "Invalid action. Please use 'play' or 'stop'."
 
 
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        stt=DeepgramSTT(),
-        llm=GoogleLLM(model="gemini-3-flash-preview", thinking_budget=0),
-        tts=CartesiaTTS(model="sonic-3.5"),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
+def on_ready() -> None:
+    zeroruntime.invoke(
+        AGENT_ID,
+        room=Room(name="Background Audio", playground=True),
     )
 
 
-def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
-
-
 if __name__ == "__main__":
-    zrt.serve(Assistant, on_ready=invoke_agent, background_audio=True)
+    zeroruntime.serve(VoiceAgent, on_ready=on_ready, room=Room(background_audio=True))

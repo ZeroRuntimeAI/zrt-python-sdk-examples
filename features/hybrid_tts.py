@@ -1,67 +1,49 @@
-"""
-Hybrid TTS: a realtime LLM rendered through a cascade TTS voice.
+# A realtime model that thinks, with your own TTS on the output -- a brand
+# voice, a cloned voice, or a language its built-in voices do not cover. Its
+# ears are untouched, so this is still speech-to-speech on the way in.
 
-Feature:  Use a realtime model for reasoning but synthesize speech through a dedicated TTS
-          provider (Cartesia) for full control over the voice (mode="hybrid_tts").
-Pipeline: Gemini Realtime (LLM) · Cartesia sonic-3.5 (TTS) · Silero VAD · Namo turn detector
-Env:      ZRT_AUTH_TOKEN, GOOGLE_API_KEY, CARTESIA_API_KEY
-Run:      uv run features/hybrid_tts.py
-"""
-import zrt
-from zrt import Agent, Pipeline, Room, function_tool
-from zrt.plugins import CartesiaTTS, GeminiLiveConfig, GeminiRealtime, SileroVAD, TurnDetector
+import os
+
+import zeroruntime
+from zeroruntime import Agent, Pipeline, Room
+from zeroruntime.plugins import CartesiaTTS, GeminiRealtime
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-AGENT_ID = "hybrid-tts-agent"
 
 
-class Assistant(Agent):
+AGENT_ID = os.getenv("AGENT_ID", "hybrid-tts-agent")
+
+
+class HybridVoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(
-            name="Assistant",
-            agent_id=AGENT_ID,
             instructions=(
-                "You are a lively, low-latency voice assistant running on a hybrid pipeline. "
-                "Keep replies short and natural. When asked about the weather, call get_weather."
+                "You are a helpful voice assistant that can answer questions and "
+                "help with tasks."
             ),
-            pipeline=build_pipeline(),
+            agent_id=AGENT_ID,
+            pipeline=Pipeline(
+                realtime=GeminiRealtime(
+                    model="gemini-3.1-flash-live-preview",
+                    config={"voice": "Leda", "response_modalities": ["AUDIO"]},
+                ),
+                tts=CartesiaTTS(),
+            ),
         )
 
     async def on_enter(self) -> None:
-        await self.session.say("Hi! I'm running in hybrid TTS mode. Ask me about the weather somewhere!")
+        await self.session.say("Hello, how can I help you today?")
 
     async def on_exit(self) -> None:
         await self.session.say("Goodbye!")
 
-    @function_tool
-    async def get_weather(self, city: str) -> dict:
-        """Get the current weather for a city.
 
-        Args:
-            city: The city to look up, e.g. "Paris".
-        """
-        # Replace with a real API in production.
-        return {"city": city, "conditions": "sunny", "temp_c": 24}
-
-
-# Native ear + external voice: the realtime model understands audio itself, but a
-# dedicated TTS speaks its text.
-def build_pipeline() -> Pipeline:
-    """Return a fresh Pipeline; serve() builds a new agent + pipeline ."""
-    return Pipeline(
-        llm=GeminiRealtime(config=GeminiLiveConfig()),
-        tts=CartesiaTTS(model="sonic-3.5"),
-        vad=SileroVAD(),
-        turn_detector=TurnDetector(model="echo-large"),
-    )
-
-
-def invoke_agent() -> None:
-    """Start a session once the agent is registered (fired by serve's on_ready)."""
-    zrt.invoke(AGENT_ID, room=Room(playground=True))
+def on_ready() -> None:
+    zeroruntime.invoke(AGENT_ID, room=Room(
+        name="Hybrid TTS", playground=True))
 
 
 if __name__ == "__main__":
-    zrt.serve(Assistant, on_ready=invoke_agent)
+    zeroruntime.serve(HybridVoiceAgent, on_ready=on_ready)

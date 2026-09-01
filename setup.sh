@@ -42,11 +42,11 @@ else
   log "upgrading pip"
   python -m pip install --quiet --upgrade pip
 
-  log "installing zrt"
-  pip install --quiet "zrt"
+  log "installing zeroruntime"
+  pip install --quiet "zeroruntime"
 
   log "installing example dependencies"
-  pip install --quiet "python-dotenv>=1.0"
+  pip install --quiet "httpx"
 
   run_hint="source .venv/bin/activate && python features/basic_cascade.py"
 fi
@@ -64,7 +64,7 @@ fi
 cat <<EOF
 
 Setup complete. Next:
-  1. Edit .env — set ZRT_AUTH_TOKEN and the provider keys your example needs.
+  1. Edit .env — set ZERORUNTIME_AUTH_TOKEN and the provider keys your example needs.
   2. Run an example:
        $run_hint
 EOF

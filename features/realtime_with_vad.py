@@ -1,19 +1,20 @@
-# Speech to speech with one model doing all of it -- the counterpart to
-# basic_cascade.py. Filling the realtime slot is what makes it a realtime
-# pipeline; the mode is inferred from the components, never declared.
+# realtime.py with two things in front of the model: VAD and denoise.
+# A realtime model hears the caller directly, so anything that shapes that
+# audio has to sit in the pipeline -- SileroVAD marks where speech starts and
+# stops, which is what sharpens time to first byte (TTFB), and AICousticsDenoise
+# cleans the inbound stream before either of them sees it.
 
 import os
-
 import zeroruntime
 from zeroruntime import Agent, Pipeline, Room
-from zeroruntime.plugins import GeminiRealtime
+from zeroruntime.inference import AICousticsDenoise
+from zeroruntime.plugins import GeminiRealtime,SileroVAD
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
-
-AGENT_ID = os.getenv("AGENT_ID", "realtime-basicff")
+AGENT_ID = os.getenv("AGENT_ID", "realtime-basi-with-vad")
 
 
 class MyVoiceAgent(Agent):
@@ -25,13 +26,15 @@ class MyVoiceAgent(Agent):
             ),
             agent_id=AGENT_ID,
             pipeline=Pipeline(
-                realtime=GeminiRealtime(
+                llm=GeminiRealtime(
                     model="gemini-3.1-flash-live-preview",
                     config={
                         "voice": "Leda",
                         "response_modalities": ["AUDIO"],
                     },
                 ),
+                vad=SileroVAD(),
+                denoise=AICousticsDenoise(model_id="quail-vf-2.2-l-16khz"),
             ),
         )
 
@@ -44,7 +47,7 @@ class MyVoiceAgent(Agent):
 
 def on_ready() -> None:
     zeroruntime.invoke(AGENT_ID, room=Room(
-        name="Realtime Basic", playground=True))
+        name="Realtime Basic Vad", playground=True))
 
 if __name__ == "__main__":
     zeroruntime.serve(MyVoiceAgent, on_ready=on_ready)
